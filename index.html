@@ -166,10 +166,23 @@ td.r,th.r{text-align:right}
 .bar i{display:block;width:9px;background:var(--line);border-radius:2px}
 .bar i.up{background:var(--pos)}.bar i.dn{background:var(--neg)}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+/* 起動画面（アプリを閉じてから開いたときだけ） */
+#splash{position:fixed;inset:0;z-index:100;background:#0e0e0e;display:grid;place-items:center;transition:opacity .45s ease}
+#splash.out{opacity:0;pointer-events:none}
+#splash .sp-in{display:flex;flex-direction:column;align-items:center;gap:10px;color:#f4f1ea}
+#splash img{border-radius:26px;animation:sp-pop .7s cubic-bezier(.2,1.4,.4,1) both;box-shadow:0 0 0 0 rgba(255,182,39,.5)}
+#splash .sp-name{font-family:var(--display);font-size:34px;letter-spacing:.06em;animation:sp-up .5s .25s both}
+#splash .sp-sub{font-size:12px;color:#b9b2a3;letter-spacing:.2em;animation:sp-up .5s .4s both}
+#splash .sp-track{width:180px;height:3px;background:#2a2a2a;border-radius:2px;overflow:hidden;margin-top:6px;animation:sp-up .4s .35s both}
+#splash .sp-track i{display:block;height:100%;width:40%;background:#ffb627;border-radius:2px;animation:sp-run 1s .45s cubic-bezier(.5,0,.3,1) both}
+@keyframes sp-pop{0%{transform:scale(.5) rotate(-8deg);opacity:0}100%{transform:none;opacity:1}}
+@keyframes sp-up{0%{transform:translateY(10px);opacity:0}100%{transform:none;opacity:1}}
+@keyframes sp-run{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
+<div id="splash" hidden aria-hidden="true"><div class="sp-in"><img src="icon-192.png" alt="" width="112" height="112"><div class="sp-name">hihi-N</div><div class="sp-track"><i></i></div><div class="sp-sub">地方競馬 期待値複勝</div></div></div>
 <div class="wrap">
   <header>
     <h1><img src="logo-64.png" alt="" width="40" height="40">hihi-N<small id="sub">地方競馬 期待値複勝</small></h1>
@@ -196,7 +209,7 @@ const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platfor
 const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const ls = { get(k, d){ try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } }, set(k, v){ try { localStorage.setItem(k, v); } catch (e) {} } };
 let reg = null, sub = null, confirmClear = false;
-const S = { tab: ls.get('kb-tab', 'picks'), filter: ls.get('kb-filter', 'all'), race: null, track: null, sort: 'uma', dtrack: null, bq: '', bsort: 'wet', buyFor: null };
+const S = { tab: ls.get('kb-tab', 'picks'), filter: ['all','人気','穴'].includes(ls.get('kb-filter', 'all')) ? ls.get('kb-filter', 'all') : 'all', race: null, track: null, sort: 'uma', dtrack: null, bq: '', bsort: 'wet', buyFor: null };
 const focusId = new URLSearchParams(location.search).get('id');
 if (focusId) S.tab = 'picks';
 const RAKUTEN = 'https://keiba.rakuten.co.jp', BET = 'https://bet.keiba.rakuten.co.jp/bet/RACEID/';
@@ -331,15 +344,16 @@ let showInvite = false;
 
 // ---- 通知タブ
 const LV = ['本線','狙い目','穴','血統◎'];
-const FILTERS = [['all','すべて'],['本線','本線'],['狙い目','狙い目'],['穴','穴']];
+const FILTERS = [['all','すべて'],['人気','人気'],['穴','穴']];
+const hasMark = (p, k) => k === '人気' ? !(p.marks || []).includes('穴') : (p.marks || []).includes(k);
 const ago = iso => iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' }) : '';
 async function renderPicks(){
   const items = (await getAll(notifDb, 'picks')).sort((a,b) => (b.date || '').localeCompare(a.date || '') || (a.post || '').localeCompare(b.post || ''));
   const picks = items.filter(x => x.type === 'pick'), sums = items.filter(x => x.type === 'summary');
   for (const d of [...new Set(picks.map(p => p.date))].slice(0, 3)) await loadDay(d);
   const bank = await bankroll(), bs = await bets();
-  const shown = picks.filter(p => S.filter === 'all' || (p.marks || []).includes(S.filter));
-  let h = `<div class="chips" role="group" aria-label="絞り込み">${FILTERS.map(([k,l]) => `<button class="chip" data-f="${k}" aria-pressed="${S.filter===k}">${l}<span class="num"> ${k==='all'?picks.length:picks.filter(p => (p.marks||[]).includes(k)).length}</span></button>`).join('')}</div>`;
+  const shown = picks.filter(p => S.filter === 'all' || hasMark(p, S.filter));
+  let h = `<div class="chips" role="group" aria-label="絞り込み">${FILTERS.map(([k,l]) => `<button class="chip" data-f="${k}" aria-pressed="${S.filter===k}">${l}<span class="num"> ${k==='all'?picks.length:picks.filter(p => hasMark(p, k)).length}</span></button>`).join('')}</div>`;
   if (!picks.length) h += `<div class="card empty"><b>まだ通知はありません</b>レースの日は、PCが発走の12分前と5分前に楽天のオッズを読み、本線が出たらここに並びます（12分前は候補、5分前で「買えます」か「見送り」が決まります）。</div>`;
   else if (!shown.length) h += `<div class="card empty"><b>この印の通知はありません</b>「すべて」に切り替えると全部の通知が見られます。</div>`;
   else {
@@ -702,6 +716,14 @@ navigator.serviceWorker && navigator.serviceWorker.addEventListener('message', e
 document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
 setInterval(() => { if (!document.hidden && (S.tab === 'card' || S.tab === 'picks') && !S.buyFor && !(document.activeElement && /INPUT|SELECT/.test(document.activeElement.tagName))) render(); }, 120000);
 
+// アプリを閉じてから開いたときだけ起動画面を出す（裏から戻ったときは出さない）
+(function splash(){
+  let first = true; try { first = !sessionStorage.getItem('kb-open'); sessionStorage.setItem('kb-open', '1'); } catch (e) {}
+  const el = $('#splash'); if (!first || !el) return;
+  el.hidden = false;
+  const quick = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => { el.hidden = true; }, 500); }, quick ? 400 : 1500);
+})();
 (async function init(){
   if ('serviceWorker' in navigator){
     try { reg = await navigator.serviceWorker.register('sw.js'); await navigator.serviceWorker.ready; sub = await reg.pushManager.getSubscription(); } catch (e) {}
