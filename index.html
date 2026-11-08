@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>hihi-N</title>
+<meta name="theme-color" content="#0e0e0e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="hihi-N">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=IBM+Plex+Mono:wght@500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* レイアウト：ナイター開催の掲示板。1列のカードに、通知が来た順で買い馬が並ぶ */
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --ink:#18212b; --mute:#5d6873; --line:#d6dce2; --soft:#f5f7f9;
+  --accent:#d98a00; --accentInk:#7a4b00; --accentSoft:#fff1d6;
+  --pos:#1f7a4a; --posSoft:#e2f3e9; --neg:#b3412e; --negSoft:#f8e4df; --blue:#2f5e9e; --blueSoft:#e3ecf8;
+  --display:"Dela Gothic One","Zen Kaku Gothic New",system-ui,sans-serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f141b; --panel:#172029; --ink:#e6ebf0; --mute:#97a3ae; --line:#2a3642; --soft:#1c2631;
+  --accent:#ffb627; --accentInk:#ffcf6b; --accentSoft:#3a2c0f;
+  --pos:#5fcf8f; --posSoft:#173628; --neg:#ff8a74; --negSoft:#3c1f19; --blue:#7fb0f0; --blueSoft:#1a2b42; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f141b; --panel:#172029; --ink:#e6ebf0; --mute:#97a3ae; --line:#2a3642; --soft:#1c2631;
+  --accent:#ffb627; --accentInk:#ffcf6b; --accentSoft:#3a2c0f;
+  --pos:#5fcf8f; --posSoft:#173628; --neg:#ff8a74; --negSoft:#3c1f19; --blue:#7fb0f0; --blueSoft:#1a2b42; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;-webkit-text-size-adjust:100%;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px;padding-top:14px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding-block:8px;z-index:5}
+h1{font-family:var(--display);font-weight:400;font-size:24px;margin:0;letter-spacing:.03em;display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center}
+h1 img{grid-row:1/3;border-radius:9px;display:block}
+h1 small{display:block;grid-column:2;font-family:var(--body);font-size:12px;color:var(--mute);letter-spacing:0;margin-top:2px}
+.pill{display:inline-block;font-size:11px;font-weight:700;border-radius:4px;padding:2px 7px;white-space:nowrap;line-height:1.5}
+.pill.on{background:var(--posSoft);color:var(--pos)}.pill.off{background:var(--soft);color:var(--mute);border:1px solid var(--line)}
+.pill.本線{background:var(--accent);color:#1a1200}.pill.狙い目{background:var(--accentSoft);color:var(--accentInk)}
+.pill.穴{background:var(--negSoft);color:var(--neg)}.pill.血統◎{background:var(--blueSoft);color:var(--blue)}
+.pill.変更{background:var(--blueSoft);color:var(--blue)}.pill.見送り{background:var(--soft);color:var(--mute);border:1px solid var(--line)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.setup h2{font-size:16px;margin:0 0 6px}
+.setup p{margin:0 0 10px;color:var(--mute);font-size:14px}
+.setup ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:10px 14px;font-weight:700}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#1a1200}
+.btn.small{padding:6px 10px;font-size:13px;font-weight:500}
+.code{font-family:var(--mono);font-size:11px;word-break:break-all;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:8px;max-height:6.5em;overflow:auto;user-select:all;-webkit-user-select:all}
+details summary{cursor:pointer;font-weight:700;font-size:14px}
+details[open] summary{margin-bottom:8px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:500;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.day{display:flex;flex-direction:column;gap:10px}
+.dayhead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-top:4px}
+.dayhead h3{margin:0;font-size:14px;letter-spacing:.04em}
+.dayhead span{font-size:12px;color:var(--mute)}
+.summary{font-size:13px;background:var(--soft);border:1px dashed var(--line);border-radius:10px;padding:8px 12px;color:var(--mute)}
+.pick{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:start;scroll-margin-top:80px}
+.pick.hl{border-color:var(--accent);box-shadow:0 0 0 2px var(--accentSoft)}
+.pick.cancel{opacity:.6}
+.pick.cancel .hname{text-decoration:line-through}
+.race{grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.race b{font-family:var(--display);font-weight:400;font-size:18px;color:var(--accentInk)}
+.race .post{font-family:var(--mono);font-size:13px;color:var(--mute);margin-left:auto}
+.uma{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:6px;font-family:var(--mono);font-weight:600;font-size:18px;border:1px solid var(--line)}
+.w1{background:#fff;color:#111}.w2{background:#222;color:#fff}.w3{background:#e23b3b;color:#fff}.w4{background:#2b62d6;color:#fff}
+.w5{background:#f2cf2e;color:#111}.w6{background:#2f9e54;color:#fff}.w7{background:#f08a24;color:#111}.w8{background:#f2a7c3;color:#111}
+.hname{font-weight:700;font-size:17px;line-height:1.3}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px}
+.metrics div{background:var(--soft);border-radius:8px;padding:5px 8px}
+.metrics small{display:block;font-size:11px;color:var(--mute)}
+.metrics span{font-family:var(--mono);font-weight:600;font-size:16px}
+.metrics em{font-style:normal;font-size:11px;color:var(--mute);margin-left:2px}
+.note{grid-column:1/-1;font-size:12px;color:var(--mute)}
+.empty{text-align:center;color:var(--mute);padding:28px 16px}
+.empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:6px}
+.foot{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;font-size:14px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><img src="logo-64.png" alt="" width="40" height="40">hihi-N<small>地方競馬 期待値複勝の通知</small></h1>
+    <span id="state" class="pill off">準備中</span>
+  </header>
+  <section id="setup" class="card setup" hidden></section>
+  <div class="chips" id="filters" role="group" aria-label="絞り込み"></div>
+  <main id="list"></main>
+  <div class="foot" id="foot"></div>
+</div>
+<div class="toast" id="toast" hidden></div>
+<script src="config.js"></script>
+<script>
+(function(){
+'use strict';
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const KEY = (window.KEIBA_CONFIG || {}).vapidPublicKey || '';
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+let filter = 'all', reg = null, sub = null, confirmClear = false;
+try { filter = localStorage.getItem('kb-filter') || 'all'; } catch (e) {}
+const focusId = new URLSearchParams(location.search).get('id');
+
+function toast(m){ const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 2600); }
+
+// ---- 保存した通知（service worker が書いたもの）
+function db(){ return new Promise((res, rej) => { const q = indexedDB.open('keiba-notify', 1); q.onupgradeneeded = () => q.result.createObjectStore('picks', { keyPath: 'key' }); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
+async function all(){ try { const d = await db(); return await new Promise(res => { const q = d.transaction('picks').objectStore('picks').getAll(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); }); } catch (e) { return []; } }
+async function clear(){ try { const d = await db(); await new Promise(res => { const t = d.transaction('picks', 'readwrite'); t.objectStore('picks').clear(); t.oncomplete = res; }); } catch (e) {} }
+
+// ---- 通知の登録
+const b64 = s => { const pad = '='.repeat((4 - s.length % 4) % 4); const raw = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...raw].map(c => c.charCodeAt(0))); };
+const toCode = o => 'KB1.' + btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+async function enable(){
+  try {
+    const p = await Notification.requestPermission();
+    if (p !== 'granted') { toast('通知が許可されませんでした。設定アプリ → 通知 から許可できます'); return renderSetup(); }
+    sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(KEY) });
+    toast('通知をオンにしました'); renderSetup();
+  } catch (e) { toast('登録できませんでした：' + e.message); }
+}
+function copy(text){
+  const done = () => toast('コピーしました');
+  try { navigator.clipboard.writeText(text).then(done, () => sel()); } catch (e) { sel(); }
+  function sel(){ const el = $('#code'); const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('選択しました。長押しでコピーしてください'); }
+}
+
+function renderSetup(){
+  const box = $('#setup'), st = $('#state');
+  const on = sub && Notification.permission === 'granted';
+  st.className = 'pill ' + (on ? 'on' : 'off'); st.textContent = on ? '通知オン' : '通知オフ';
+  if (isIOS && !standalone){
+    box.hidden = false;
+    box.innerHTML = `<h2>まずホーム画面に追加</h2><p>iPhoneは、ホーム画面に追加したアプリからでないと通知を受け取れません。</p>
+      <ol><li>Safariの下にある共有ボタン（四角から矢印）をタップ</li><li>「ホーム画面に追加」を選んで「追加」</li><li>ホーム画面の「hihi-N」のアイコンから開き直す</li></ol>`;
+    return;
+  }
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)){
+    box.hidden = false; box.innerHTML = '<h2>このブラウザは通知に対応していません</h2><p>iPhoneはiOS 16.4以降が必要です。設定 → 一般 → ソフトウェアアップデート から更新してください。</p>'; return;
+  }
+  if (!KEY){ box.hidden = false; box.innerHTML = '<h2>PCの設定がまだです</h2><p>PCで「node setup.js」を動かしてできた config.js を、このアプリと同じ場所に置いてください。</p>'; return; }
+  if (!on){
+    box.hidden = false;
+    box.innerHTML = `<h2>通知をオンにする</h2><p>買い馬が出たとき、発走の20分前ごろにこのiPhoneへ知らせます。</p><button class="btn primary" id="enable" type="button">通知をオンにする</button>`;
+    return;
+  }
+  const code = toCode(sub.toJSON());
+  box.hidden = false;
+  box.innerHTML = `<details ${localStorage.getItem('kb-registered') ? '' : 'open'}><summary>PCに登録する（最初に1回）</summary>
+    <p>この「登録コード」をPCに渡すと、PCからこのiPhoneに通知が届くようになります。LINEのKeepやメールで自分に送って、PCでコピーしてください。</p>
+    <div class="code" id="code">${esc(code)}</div>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn small" id="copy" type="button">登録コードをコピー</button><button class="btn small" id="done" type="button">PCに登録した</button></div>
+    <p style="margin-top:10px">PCではターミナルで <span class="num">node subscribe.js</span> を動かし、コードを貼り付けてEnter。続けて <span class="num">node test-push.js</span> でテスト通知が届きます。</p></details>`;
+}
+
+// ---- 一覧
+const LV = ['本線','狙い目','穴','血統◎'];
+const FILTERS = [['all','すべて'],['本線','本線'],['狙い目','狙い目'],['穴','穴']];
+const fmtDay = d => { if (!d) return ''; const dt = new Date(+d.slice(0,4), +d.slice(4,6)-1, +d.slice(6,8)); return `${+d.slice(4,6)}月${+d.slice(6,8)}日(${'日月火水木金土'[dt.getDay()]})`; };
+const ago = iso => { if (!iso) return ''; const t = new Date(iso); return t.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' }); };
+async function renderList(){
+  const items = (await all()).sort((a,b) => (b.date || '').localeCompare(a.date || '') || (a.post || '').localeCompare(b.post || ''));
+  const picks = items.filter(x => x.type === 'pick'), sums = items.filter(x => x.type === 'summary');
+  $('#filters').innerHTML = FILTERS.map(([k,l]) => `<button class="chip" data-f="${k}" aria-pressed="${filter===k}">${l}<span class="num"> ${k==='all'?picks.length:picks.filter(p => (p.marks||[]).includes(k)).length}</span></button>`).join('');
+  const shown = picks.filter(p => filter === 'all' || (p.marks || []).includes(filter));
+  if (!picks.length){
+    $('#list').innerHTML = `<div class="card empty"><b>まだ通知はありません</b>レースの日は、PCのプログラムが発走の20分前・10分前・5分前・2分前にオッズを読み、期待値複勝の狙い目が出たらここに並びます。</div>`;
+  } else if (!shown.length){
+    $('#list').innerHTML = `<div class="card empty"><b>この印の通知はありません</b>「すべて」に切り替えると全部の通知が見られます。</div>`;
+  } else {
+    const days = [...new Set(shown.map(p => p.date))];
+    $('#list').innerHTML = days.map(d => {
+      const ps = shown.filter(p => p.date === d), s = sums.find(x => x.date === d);
+      return `<section class="day"><div class="dayhead"><h3>${fmtDay(d)}</h3><span>${ps.filter(p => !p.cancelled).length}件</span></div>
+        ${s ? `<div class="summary">${esc(s.body)}</div>` : ''}
+        ${ps.map(card).join('')}</section>`;
+    }).join('');
+  }
+  $('#foot').innerHTML = confirmClear
+    ? `<div class="confirm">保存した通知をすべて消します。<button class="btn small" id="clearYes" type="button">消す</button><button class="btn small" id="clearNo" type="button">やめる</button></div>`
+    : `<button class="btn small" id="testLocal" type="button">このiPhoneで通知を試す</button>${picks.length ? '<button class="btn small" id="clear" type="button">履歴を消す</button>' : ''}`;
+  if (focusId){ const el = document.getElementById('p-' + focusId); if (el) el.scrollIntoView({ block: 'center' }); }
+}
+function card(p){
+  const marks = LV.filter(m => (p.marks || []).includes(m));
+  const state = p.cancelled ? '<span class="pill 見送り">見送りに変更</span>' : p.kind === 'update' ? '<span class="pill 変更">変更あり</span>' : '';
+  return `<article class="card pick ${p.cancelled ? 'cancel' : ''} ${p.id === focusId ? 'hl' : ''}" id="p-${esc(p.id)}">
+    <div class="race"><b>${esc(p.track)} ${p.rno}R</b>${marks.map(m => `<span class="pill ${m}">${m}</span>`).join('')}${state}<span class="post">発走 ${esc(p.post)}</span></div>
+    <span class="uma w${p.waku || ''}">${p.uma}</span>
+    <div style="min-width:0"><div class="hname">${esc(p.name)}</div>
+      <div class="metrics"><div><small>複勝</small><span>${p.place != null ? (+p.place).toFixed(1) : '–'}</span><em>倍</em></div><div><small>3着内率</small><span>${p.p3 != null ? Math.round(p.p3 * 100) : '–'}</span><em>%</em></div><div><small>期待値</small><span>${p.ev != null ? (+p.ev).toFixed(2) : '–'}</span><small>単勝${p.tan != null ? (+p.tan).toFixed(1) : '–'}倍</small></div></div></div>
+    <div class="note">${p.cancelled ? esc(p.body) : p.at ? `${ago(p.at)} のオッズで判定` : ''}</div></article>`;
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'enable') return enable();
+  if (b.id === 'copy') return copy($('#code').textContent);
+  if (b.id === 'done'){ try { localStorage.setItem('kb-registered', '1'); } catch (er) {} toast('PCから「node test-push.js」でテスト通知を送ってみてください'); return renderSetup(); }
+  if (b.dataset.f){ filter = b.dataset.f; try { localStorage.setItem('kb-filter', filter); } catch (er) {} return renderList(); }
+  if (b.id === 'clear'){ confirmClear = true; return renderList(); }
+  if (b.id === 'clearNo'){ confirmClear = false; return renderList(); }
+  if (b.id === 'clearYes'){ confirmClear = false; clear().then(renderList); toast('履歴を消しました'); return; }
+  if (b.id === 'testLocal'){
+    if (!reg || Notification.permission !== 'granted') return toast('先に「通知をオンにする」を押してください');
+    reg.showNotification('hihi-N', { body: 'このiPhoneで通知が表示できました', icon: 'icon-192.png' }); return;
+  }
+});
+navigator.serviceWorker && navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'refresh') renderList(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) renderList(); });
+
+(async function init(){
+  if ('serviceWorker' in navigator){
+    try { reg = await navigator.serviceWorker.register('sw.js'); await navigator.serviceWorker.ready; sub = await reg.pushManager.getSubscription(); } catch (e) {}
+  }
+  renderSetup(); renderList();
+})();
+})();
+</script>
+</body>
+</html>
