@@ -274,7 +274,7 @@ function renderSetup(){
   }
   if (!('serviceWorker' in navigator) || !('PushManager' in window)){ box.hidden = false; box.innerHTML = '<h2>このブラウザは通知に対応していません</h2><p>iPhoneはiOS 16.4以降が必要です。</p>'; return; }
   if (!KEY){ box.hidden = false; box.innerHTML = '<h2>PCの設定がまだです</h2><p>PCで「node setup.js」を動かしてできた config.js を、このアプリと同じ場所に置いてください。</p>'; return; }
-  if (!on){ box.hidden = false; box.innerHTML = `<h2>通知をオンにする</h2><p>買い馬が出たとき、発走の12分前と5分前ごろにこのiPhoneへ知らせます。</p><button class="btn primary" id="enable" type="button">通知をオンにする</button>`; return; }
+  if (!on){ box.hidden = false; box.innerHTML = `<h2>通知をオンにする</h2><p>本線の買い馬が出たとき、発走の7分前ごろにこのiPhoneへ知らせます。</p><button class="btn primary" id="enable" type="button">通知をオンにする</button>`; return; }
   if (!ls.get('kb-registered')){
     box.hidden = false;
     box.innerHTML = `<details open><summary>PCに登録する（最初に1回）</summary>
@@ -295,7 +295,7 @@ async function renderPicks(){
   const bank = await bankroll(), bs = await bets();
   const shown = picks.filter(p => S.filter === 'all' || (p.marks || []).includes(S.filter));
   let h = `<div class="chips" role="group" aria-label="絞り込み">${FILTERS.map(([k,l]) => `<button class="chip" data-f="${k}" aria-pressed="${S.filter===k}">${l}<span class="num"> ${k==='all'?picks.length:picks.filter(p => (p.marks||[]).includes(k)).length}</span></button>`).join('')}</div>`;
-  if (!picks.length) h += `<div class="card empty"><b>まだ通知はありません</b>レースの日は、PCが発走の12分前と5分前に楽天のオッズを読み、期待値複勝の狙い目が出たらここに並びます。</div>`;
+  if (!picks.length) h += `<div class="card empty"><b>まだ通知はありません</b>レースの日は、PCが発走の12分前と7分前に楽天のオッズを読み、7分前の判定で本線が出たらここに並びます。</div>`;
   else if (!shown.length) h += `<div class="card empty"><b>この印の通知はありません</b>「すべて」に切り替えると全部の通知が見られます。</div>`;
   else {
     const days = [...new Set(shown.map(p => p.date))];
@@ -363,7 +363,7 @@ async function renderCard(){
       ${pk ? `<span class="rs" style="display:block">${lv.map(m => `<span class="pill ${m}">${m}</span>`).join(' ') || '<span class="pill 見送り">買い</span>'} ${pk.uma}番 ${esc(pk.name)}</span>` : ''}</span>
       <span class="rt">${hhmm(r.post)}${win ? `<br><span class="pos p1">${win}</span>` : String(r.post).padStart(4,'0') > nowHM && r.oddsAt ? '<br>オッズ有' : ''}</span></button>`;
   }).join('')}</div>
-  <p class="lead" style="font-size:12px">${d.at ? new Date(d.at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) + ' 時点。' : ''}オッズは締切12分前と5分前に読んだ値です。</p>`;
+  <p class="lead" style="font-size:12px">${d.at ? new Date(d.at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) + ' 時点。' : ''}オッズは発走12分前と7分前に読んだ値です（締切直前にはさらに下がることが多い）。</p>`;
 }
 function noData(){
   if (DATA.err === 'nokey') return `<div class="card empty"><b>予想データの鍵がまだありません</b>PCで <span class="num">node set-token.js</span> を動かすと、このiPhoneに鍵が届いて出馬表やデータが見られるようになります。</div>`;
