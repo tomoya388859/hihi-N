@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=IBM+Plex+Mono:wght@500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
 <style>
-/* レイアウト：ナイター開催の掲示板。1列のカードに、通知が来た順で買い馬が並ぶ */
+/* ナイター開催の掲示板。下のタブで「通知・出馬表・収支・データ」を切り替える */
 :root{
   --bg:#eef1f4; --panel:#ffffff; --ink:#18212b; --mute:#5d6873; --line:#d6dce2; --soft:#f5f7f9;
   --accent:#d98a00; --accentInk:#7a4b00; --accentSoft:#fff1d6;
@@ -34,33 +34,35 @@
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;-webkit-text-size-adjust:100%;
-  padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(76px + env(safe-area-inset-bottom,0px));
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
 .wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px;padding-top:14px}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 button{font:inherit;color:inherit;cursor:pointer}
+input,select{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:0}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 header{display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding-block:8px;z-index:5}
 h1{font-family:var(--display);font-weight:400;font-size:24px;margin:0;letter-spacing:.03em;display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center}
 h1 img{grid-row:1/3;border-radius:9px;display:block}
 h1 small{display:block;grid-column:2;font-family:var(--body);font-size:12px;color:var(--mute);letter-spacing:0;margin-top:2px}
+h2{font-size:16px;margin:0}
 .pill{display:inline-block;font-size:11px;font-weight:700;border-radius:4px;padding:2px 7px;white-space:nowrap;line-height:1.5}
 .pill.on{background:var(--posSoft);color:var(--pos)}.pill.off{background:var(--soft);color:var(--mute);border:1px solid var(--line)}
 .pill.本線{background:var(--accent);color:#1a1200}.pill.狙い目{background:var(--accentSoft);color:var(--accentInk)}
 .pill.穴{background:var(--negSoft);color:var(--neg)}.pill.血統◎{background:var(--blueSoft);color:var(--blue)}
 .pill.変更{background:var(--blueSoft);color:var(--blue)}.pill.見送り{background:var(--soft);color:var(--mute);border:1px solid var(--line)}
+.pill.hit{background:var(--posSoft);color:var(--pos)}.pill.miss{background:var(--soft);color:var(--mute);border:1px solid var(--line)}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
-.setup h2{font-size:16px;margin:0 0 6px}
-.setup p{margin:0 0 10px;color:var(--mute);font-size:14px}
+.setup p,.lead{margin:0 0 10px;color:var(--mute);font-size:14px}
 .setup ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px}
-.btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:10px 14px;font-weight:700}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:10px 14px;font-weight:700;text-decoration:none;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#1a1200}
 .btn.small{padding:6px 10px;font-size:13px;font-weight:500}
 .code{font-family:var(--mono);font-size:11px;word-break:break-all;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:8px;max-height:6.5em;overflow:auto;user-select:all;-webkit-user-select:all}
 details summary{cursor:pointer;font-weight:700;font-size:14px}
 details[open] summary{margin-bottom:8px}
-.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:500;white-space:nowrap}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .day{display:flex;flex-direction:column;gap:10px}
@@ -75,7 +77,8 @@ details[open] summary{margin-bottom:8px}
 .race{grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .race b{font-family:var(--display);font-weight:400;font-size:18px;color:var(--accentInk)}
 .race .post{font-family:var(--mono);font-size:13px;color:var(--mute);margin-left:auto}
-.uma{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:6px;font-family:var(--mono);font-weight:600;font-size:18px;border:1px solid var(--line)}
+.uma{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:6px;font-family:var(--mono);font-weight:600;font-size:18px;border:1px solid var(--line);flex:none}
+.uma.s{width:30px;height:30px;font-size:14px;border-radius:5px}
 .w1{background:#fff;color:#111}.w2{background:#222;color:#fff}.w3{background:#e23b3b;color:#fff}.w4{background:#2b62d6;color:#fff}
 .w5{background:#f2cf2e;color:#111}.w6{background:#2f9e54;color:#fff}.w7{background:#f08a24;color:#111}.w8{background:#f2a7c3;color:#111}
 .hname{font-weight:700;font-size:17px;line-height:1.3}
@@ -85,25 +88,80 @@ details[open] summary{margin-bottom:8px}
 .metrics span{font-family:var(--mono);font-weight:600;font-size:16px}
 .metrics em{font-style:normal;font-size:11px;color:var(--mute);margin-left:2px}
 .note{grid-column:1/-1;font-size:12px;color:var(--mute)}
+.actions{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px}
+.actions .stake{font-size:13px;color:var(--mute)}
+.actions .stake b{font-family:var(--mono);color:var(--ink);font-size:15px}
+.buyform{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:var(--soft);border-radius:10px;padding:8px}
+.buyform input{width:96px}
 .empty{text-align:center;color:var(--mute);padding:28px 16px}
 .empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:6px}
 .foot{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;font-size:14px}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:14px;z-index:30;max-width:calc(100% - 32px)}
+/* 下のタブ */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--panel);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);
+  padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+nav.tabs button{border:0;background:none;padding:9px 0 8px;font-size:12px;font-weight:700;color:var(--mute);display:flex;flex-direction:column;align-items:center;gap:2px}
+nav.tabs button svg{width:22px;height:22px}
+nav.tabs button[aria-current="page"]{color:var(--accentInk)}
+/* 出馬表 */
+.rlist{display:flex;flex-direction:column;gap:8px}
+.rrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:center;text-align:left;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.rrow .rno{font-family:var(--display);font-size:17px;color:var(--accentInk);min-width:2.4em}
+.rrow .rn{font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rrow .rs{font-size:12px;color:var(--mute)}
+.rrow .rt{font-family:var(--mono);font-size:13px;color:var(--mute);text-align:right}
+.rrow.done{opacity:.72}
+.hrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 10px;align-items:start;padding:10px 0;border-top:1px solid var(--line)}
+.hrow:first-of-type{border-top:0}
+.hrow.pick{background:var(--accentSoft);margin:0 -14px;padding:10px 14px;border-radius:8px;border-top:0}
+.hrow.scr{opacity:.45}
+.hrow .hn{font-weight:700;font-size:15px}
+.hrow .hs{font-size:12px;color:var(--mute)}
+.hrow .hv{text-align:right;font-family:var(--mono);font-size:13px;line-height:1.35}
+.hrow .hv b{font-size:16px}
+.tags{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.tag{font-size:11px;border-radius:4px;padding:1px 6px;background:var(--soft);color:var(--mute);border:1px solid var(--line)}
+.tag.p{background:var(--posSoft);color:var(--pos);border-color:transparent}.tag.n{background:var(--negSoft);color:var(--neg);border-color:transparent}
+.tag.b{background:var(--blueSoft);color:var(--blue);border-color:transparent}
+.pos{display:inline-block;min-width:1.6em;text-align:center;font-family:var(--mono);font-weight:600;border-radius:4px;background:var(--soft);font-size:12px;padding:0 4px}
+.pos.p1{background:var(--accent);color:#1a1200}.pos.p2,.pos.p3{background:var(--accentSoft);color:var(--accentInk)}
+.back{border:0;background:none;color:var(--accentInk);font-weight:700;padding:0}
+.sort{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--mute)}
+/* 収支・データ */
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.stat{background:var(--soft);border-radius:10px;padding:10px 12px}
+.stat small{display:block;font-size:12px;color:var(--mute)}
+.stat b{font-family:var(--mono);font-size:20px}
+.stat b.pos{background:none}
+.plus{color:var(--pos)}.minus{color:var(--neg)}
+.tw{overflow-x:auto;margin:0 -4px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:6px 5px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{font-size:11px;color:var(--mute);font-weight:700}
+td.r,th.r{text-align:right}
+.bar{display:inline-flex;gap:2px;align-items:flex-end;height:16px;vertical-align:middle}
+.bar i{display:block;width:9px;background:var(--line);border-radius:2px}
+.bar i.up{background:var(--pos)}.bar i.dn{background:var(--neg)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1><img src="logo-64.png" alt="" width="40" height="40">hihi-N<small>地方競馬 期待値複勝の通知</small></h1>
+    <h1><img src="logo-64.png" alt="" width="40" height="40">hihi-N<small id="sub">地方競馬 期待値複勝</small></h1>
     <span id="state" class="pill off">準備中</span>
   </header>
   <section id="setup" class="card setup" hidden></section>
-  <div class="chips" id="filters" role="group" aria-label="絞り込み"></div>
-  <main id="list"></main>
-  <div class="foot" id="foot"></div>
+  <div id="view"></div>
 </div>
+<nav class="tabs" aria-label="画面の切り替え">
+  <button type="button" data-tab="picks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>通知</button>
+  <button type="button" data-tab="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg>出馬表</button>
+  <button type="button" data-tab="money"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>収支</button>
+  <button type="button" data-tab="data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>データ</button>
+</nav>
 <div class="toast" id="toast" hidden></div>
 <script src="config.js"></script>
 <script>
@@ -114,25 +172,87 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;
 const KEY = (window.KEIBA_CONFIG || {}).vapidPublicKey || '';
 const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-let filter = 'all', reg = null, sub = null, confirmClear = false;
-try { filter = localStorage.getItem('kb-filter') || 'all'; } catch (e) {}
+const ls = { get(k, d){ try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } }, set(k, v){ try { localStorage.setItem(k, v); } catch (e) {} } };
+let reg = null, sub = null, confirmClear = false;
+const S = { tab: ls.get('kb-tab', 'picks'), filter: ls.get('kb-filter', 'all'), race: null, track: null, sort: 'uma', dtrack: null, bq: '', bsort: 'wet', buyFor: null };
 const focusId = new URLSearchParams(location.search).get('id');
-
+if (focusId) S.tab = 'picks';
+const RAKUTEN = 'https://keiba.rakuten.co.jp', BET = 'https://bet.keiba.rakuten.co.jp/bet/RACEID/';
+const TN = t => t;
+const yen = n => (n < 0 ? '−' : '') + '¥' + Math.abs(Math.round(n)).toLocaleString();
+const pct = (x, d = 0) => x == null || isNaN(x) ? '–' : (x * 100).toFixed(d) + '%';
+const hhmm = p => { const s = String(p || '').padStart(4, '0'); return s.slice(0, 2) + ':' + s.slice(2); };
+const todayStr = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }).replace(/-/g, '');
+const fmtDay = d => { if (!d) return ''; const dt = new Date(+d.slice(0,4), +d.slice(4,6)-1, +d.slice(6,8)); return `${+d.slice(4,6)}月${+d.slice(6,8)}日(${'日月火水木金土'[dt.getDay()]})`; };
 function toast(m){ const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 2600); }
 
-// ---- 保存した通知（service worker が書いたもの）
-function db(){ return new Promise((res, rej) => { const q = indexedDB.open('keiba-notify', 1); q.onupgradeneeded = () => q.result.createObjectStore('picks', { keyPath: 'key' }); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
-async function all(){ try { const d = await db(); return await new Promise(res => { const q = d.transaction('picks').objectStore('picks').getAll(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); }); } catch (e) { return []; } }
-async function clear(){ try { const d = await db(); await new Promise(res => { const t = d.transaction('picks', 'readwrite'); t.objectStore('picks').clear(); t.oncomplete = res; }); } catch (e) {} }
+// ---- 保存（通知の履歴・鍵・買った記録）
+function idb(name, ver, up){ return new Promise((res, rej) => { const q = indexedDB.open(name, ver); q.onupgradeneeded = () => up(q.result); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
+const notifDb = () => idb('keiba-notify', 1, d => d.createObjectStore('picks', { keyPath: 'key' }));
+const appDb = () => idb('hihi-app', 1, d => { if (!d.objectStoreNames.contains('kv')) d.createObjectStore('kv'); if (!d.objectStoreNames.contains('bets')) d.createObjectStore('bets', { keyPath: 'id' }); });
+async function getAll(dbf, store){ try { const d = await dbf(); return await new Promise(res => { const q = d.transaction(store).objectStore(store).getAll(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); }); } catch (e) { return []; } }
+async function put(dbf, store, v, k){ const d = await dbf(); return new Promise((res, rej) => { const t = d.transaction(store, 'readwrite'); k === undefined ? t.objectStore(store).put(v) : t.objectStore(store).put(v, k); t.oncomplete = res; t.onerror = () => rej(t.error); }); }
+async function del(dbf, store, k){ const d = await dbf(); return new Promise(res => { const t = d.transaction(store, 'readwrite'); t.objectStore(store).delete(k); t.oncomplete = res; }); }
+async function kv(k){ try { const d = await appDb(); return await new Promise(res => { const q = d.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => res(undefined); }); } catch (e) { return undefined; } }
+async function clearPicks(){ try { const d = await notifDb(); await new Promise(res => { const t = d.transaction('picks', 'readwrite'); t.objectStore('picks').clear(); t.oncomplete = res; }); } catch (e) {} }
+
+// ---- 予想データ（PCが暗号化してGitHubのdataブランチに置いたもの）
+const DATA = { day: null, days: {}, stat: null, err: '', at: 0 };
+function repoName(){ const owner = location.hostname.split('.')[0]; const repo = location.pathname.split('/').filter(Boolean)[0] || 'hihi-N'; return owner + '/' + repo; }
+async function decrypt(b64text, keyB64){
+  const raw = Uint8Array.from(atob(b64text.trim()), c => c.charCodeAt(0));
+  const kb = Uint8Array.from(atob(keyB64), c => c.charCodeAt(0));
+  const key = await crypto.subtle.importKey('raw', kb, 'AES-GCM', false, ['decrypt']);
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: raw.slice(0, 12) }, key, raw.slice(12));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+async function fetchEnc(name){
+  const k = await kv('dataKey'); if (!k) throw new Error('nokey');
+  const repo = (await kv('repo')) || repoName();
+  const r = await fetch(`https://api.github.com/repos/${repo}/contents/${name}.enc?ref=data&t=${Date.now()}`, { headers: { Accept: 'application/vnd.github.raw' }, cache: 'no-store' });
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error('GitHub ' + r.status);
+  return decrypt(await r.text(), k);
+}
+async function loadDay(date, force){
+  if (!force && DATA.days[date] && (date !== todayStr() || Date.now() - DATA.days[date]._t < 90000)) return DATA.days[date];
+  try {
+    const d = await fetchEnc('days/' + date);
+    if (d) { d._t = Date.now(); DATA.days[date] = d; try { localStorage.setItem('kb-day-' + date, JSON.stringify(d)); } catch (e) {} }
+    DATA.err = ''; return d;
+  } catch (e) {
+    DATA.err = e.message === 'nokey' ? 'nokey' : '予想データを読めませんでした（' + e.message + '）';
+    try { const c = localStorage.getItem('kb-day-' + date); if (c) return DATA.days[date] = JSON.parse(c); } catch (er) {}
+    return null;
+  }
+}
+async function loadStatic(){ if (DATA.stat) return DATA.stat; try { DATA.stat = await fetchEnc('static'); } catch (e) { DATA.err = DATA.err || (e.message === 'nokey' ? 'nokey' : ''); } return DATA.stat; }
+
+// ---- 資金と購入額（いまの資金の2%、100円単位）
+const RATE = 0.02;
+async function bets(){ return (await getAll(appDb, 'bets')).sort((a, b) => (b.date + b.post).localeCompare(a.date + a.post)); }
+function settle(b){
+  const d = DATA.days[b.date]; if (!d) return null;
+  const r = d.races.find(x => x.key === b.raceKey); if (!r || !r.result) return null;
+  if (b.type === '単勝') return r.result.tan && r.result.tan[0] === b.uma ? Math.round(b.stake / 100 * r.result.tan[1]) : 0;
+  const p = (r.result.place || []).find(x => x[0] === b.uma); return p ? Math.round(b.stake / 100 * p[1]) : 0;
+}
+async function bankroll(){
+  const start = +ls.get('kb-bank', 0) || 0;
+  const bs = await bets(); let staked = 0, back = 0, open = 0;
+  for (const b of bs){ const s = b.back != null ? b.back : settle(b); staked += b.stake; if (s == null) open += b.stake; else back += s; }
+  return { start, now: start - staked + back, staked, back, open, settledStake: staked - open };
+}
+const stakeOf = bank => Math.max(100, Math.floor(bank * RATE / 100) * 100);
 
 // ---- 通知の登録
-const b64 = s => { const pad = '='.repeat((4 - s.length % 4) % 4); const raw = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...raw].map(c => c.charCodeAt(0))); };
+const b64u = s => { const pad = '='.repeat((4 - s.length % 4) % 4); const raw = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...raw].map(c => c.charCodeAt(0))); };
 const toCode = o => 'KB1.' + btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 async function enable(){
   try {
     const p = await Notification.requestPermission();
     if (p !== 'granted') { toast('通知が許可されませんでした。設定アプリ → 通知 から許可できます'); return renderSetup(); }
-    sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(KEY) });
+    sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(KEY) });
     toast('通知をオンにしました'); renderSetup();
   } catch (e) { toast('登録できませんでした：' + e.message); }
 }
@@ -141,96 +261,279 @@ function copy(text){
   try { navigator.clipboard.writeText(text).then(done, () => sel()); } catch (e) { sel(); }
   function sel(){ const el = $('#code'); const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('選択しました。長押しでコピーしてください'); }
 }
-
 function renderSetup(){
   const box = $('#setup'), st = $('#state');
   const on = sub && Notification.permission === 'granted';
   st.className = 'pill ' + (on ? 'on' : 'off'); st.textContent = on ? '通知オン' : '通知オフ';
+  box.hidden = true;
   if (isIOS && !standalone){
     box.hidden = false;
     box.innerHTML = `<h2>まずホーム画面に追加</h2><p>iPhoneは、ホーム画面に追加したアプリからでないと通知を受け取れません。</p>
       <ol><li>Safariの下にある共有ボタン（四角から矢印）をタップ</li><li>「ホーム画面に追加」を選んで「追加」</li><li>ホーム画面の「hihi-N」のアイコンから開き直す</li></ol>`;
     return;
   }
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)){
-    box.hidden = false; box.innerHTML = '<h2>このブラウザは通知に対応していません</h2><p>iPhoneはiOS 16.4以降が必要です。設定 → 一般 → ソフトウェアアップデート から更新してください。</p>'; return;
-  }
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)){ box.hidden = false; box.innerHTML = '<h2>このブラウザは通知に対応していません</h2><p>iPhoneはiOS 16.4以降が必要です。</p>'; return; }
   if (!KEY){ box.hidden = false; box.innerHTML = '<h2>PCの設定がまだです</h2><p>PCで「node setup.js」を動かしてできた config.js を、このアプリと同じ場所に置いてください。</p>'; return; }
-  if (!on){
+  if (!on){ box.hidden = false; box.innerHTML = `<h2>通知をオンにする</h2><p>買い馬が出たとき、発走の12分前と5分前ごろにこのiPhoneへ知らせます。</p><button class="btn primary" id="enable" type="button">通知をオンにする</button>`; return; }
+  if (!ls.get('kb-registered')){
     box.hidden = false;
-    box.innerHTML = `<h2>通知をオンにする</h2><p>買い馬が出たとき、発走の20分前ごろにこのiPhoneへ知らせます。</p><button class="btn primary" id="enable" type="button">通知をオンにする</button>`;
-    return;
+    box.innerHTML = `<details open><summary>PCに登録する（最初に1回）</summary>
+      <p>この「登録コード」をPCに渡すと、PCからこのiPhoneに通知が届くようになります。</p>
+      <div class="code" id="code">${esc(toCode(sub.toJSON()))}</div>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn small" id="copy" type="button">登録コードをコピー</button><button class="btn small" id="done" type="button">PCに登録した</button></div></details>`;
   }
-  const code = toCode(sub.toJSON());
-  box.hidden = false;
-  box.innerHTML = `<details ${localStorage.getItem('kb-registered') ? '' : 'open'}><summary>PCに登録する（最初に1回）</summary>
-    <p>この「登録コード」をPCに渡すと、PCからこのiPhoneに通知が届くようになります。LINEのKeepやメールで自分に送って、PCでコピーしてください。</p>
-    <div class="code" id="code">${esc(code)}</div>
-    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn small" id="copy" type="button">登録コードをコピー</button><button class="btn small" id="done" type="button">PCに登録した</button></div>
-    <p style="margin-top:10px">PCではターミナルで <span class="num">node subscribe.js</span> を動かし、コードを貼り付けてEnter。続けて <span class="num">node test-push.js</span> でテスト通知が届きます。</p></details>`;
 }
 
-// ---- 一覧
+// ---- 通知タブ
 const LV = ['本線','狙い目','穴','血統◎'];
 const FILTERS = [['all','すべて'],['本線','本線'],['狙い目','狙い目'],['穴','穴']];
-const fmtDay = d => { if (!d) return ''; const dt = new Date(+d.slice(0,4), +d.slice(4,6)-1, +d.slice(6,8)); return `${+d.slice(4,6)}月${+d.slice(6,8)}日(${'日月火水木金土'[dt.getDay()]})`; };
-const ago = iso => { if (!iso) return ''; const t = new Date(iso); return t.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' }); };
-async function renderList(){
-  const items = (await all()).sort((a,b) => (b.date || '').localeCompare(a.date || '') || (a.post || '').localeCompare(b.post || ''));
+const ago = iso => iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' }) : '';
+async function renderPicks(){
+  const items = (await getAll(notifDb, 'picks')).sort((a,b) => (b.date || '').localeCompare(a.date || '') || (a.post || '').localeCompare(b.post || ''));
   const picks = items.filter(x => x.type === 'pick'), sums = items.filter(x => x.type === 'summary');
-  $('#filters').innerHTML = FILTERS.map(([k,l]) => `<button class="chip" data-f="${k}" aria-pressed="${filter===k}">${l}<span class="num"> ${k==='all'?picks.length:picks.filter(p => (p.marks||[]).includes(k)).length}</span></button>`).join('');
-  const shown = picks.filter(p => filter === 'all' || (p.marks || []).includes(filter));
-  if (!picks.length){
-    $('#list').innerHTML = `<div class="card empty"><b>まだ通知はありません</b>レースの日は、PCのプログラムが発走の20分前・10分前・5分前・2分前にオッズを読み、期待値複勝の狙い目が出たらここに並びます。</div>`;
-  } else if (!shown.length){
-    $('#list').innerHTML = `<div class="card empty"><b>この印の通知はありません</b>「すべて」に切り替えると全部の通知が見られます。</div>`;
-  } else {
+  for (const d of [...new Set(picks.map(p => p.date))].slice(0, 3)) await loadDay(d);
+  const bank = await bankroll(), bs = await bets();
+  const shown = picks.filter(p => S.filter === 'all' || (p.marks || []).includes(S.filter));
+  let h = `<div class="chips" role="group" aria-label="絞り込み">${FILTERS.map(([k,l]) => `<button class="chip" data-f="${k}" aria-pressed="${S.filter===k}">${l}<span class="num"> ${k==='all'?picks.length:picks.filter(p => (p.marks||[]).includes(k)).length}</span></button>`).join('')}</div>`;
+  if (!picks.length) h += `<div class="card empty"><b>まだ通知はありません</b>レースの日は、PCが発走の12分前と5分前に楽天のオッズを読み、期待値複勝の狙い目が出たらここに並びます。</div>`;
+  else if (!shown.length) h += `<div class="card empty"><b>この印の通知はありません</b>「すべて」に切り替えると全部の通知が見られます。</div>`;
+  else {
     const days = [...new Set(shown.map(p => p.date))];
-    $('#list').innerHTML = days.map(d => {
+    h += days.map(d => {
       const ps = shown.filter(p => p.date === d), s = sums.find(x => x.date === d);
       return `<section class="day"><div class="dayhead"><h3>${fmtDay(d)}</h3><span>${ps.filter(p => !p.cancelled).length}件</span></div>
-        ${s ? `<div class="summary">${esc(s.body)}</div>` : ''}
-        ${ps.map(card).join('')}</section>`;
+        ${s ? `<div class="summary">${esc(s.body)}</div>` : ''}${ps.map(p => pickCard(p, bank, bs)).join('')}</section>`;
     }).join('');
   }
-  $('#foot').innerHTML = confirmClear
-    ? `<div class="confirm">保存した通知をすべて消します。<button class="btn small" id="clearYes" type="button">消す</button><button class="btn small" id="clearNo" type="button">やめる</button></div>`
-    : `<button class="btn small" id="testLocal" type="button">このiPhoneで通知を試す</button>${picks.length ? '<button class="btn small" id="clear" type="button">履歴を消す</button>' : ''}`;
-  if (focusId){ const el = document.getElementById('p-' + focusId); if (el) el.scrollIntoView({ block: 'center' }); }
+  h += `<div class="foot">${confirmClear ? `<div class="confirm">保存した通知をすべて消します。<button class="btn small" id="clearYes" type="button">消す</button><button class="btn small" id="clearNo" type="button">やめる</button></div>`
+    : `<button class="btn small" id="testLocal" type="button">このiPhoneで通知を試す</button>${picks.length ? '<button class="btn small" id="clear" type="button">履歴を消す</button>' : ''}`}</div>`;
+  return h;
 }
-function card(p){
+function resultOf(date, key, uma){
+  const d = DATA.days[date]; const r = d && d.races.find(x => x.key === key); if (!r || !r.result) return null;
+  const h = r.horses.find(x => x.uma === uma); const p = (r.result.place || []).find(x => x[0] === uma);
+  return { pos: h && h.pos, pay: p ? p[1] : 0 };
+}
+function buyBlock(o){
+  // o: { key, date, track, rno, post, uma, name, rid, place }
+  const bid = o.key + '|' + o.uma;
+  const bought = o.bets.filter(b => b.raceKey === o.key && b.uma === o.uma);
+  const stake = stakeOf(o.bank.now);
+  const link = o.rid ? `<a class="btn small primary" href="${BET}${esc(o.rid)}" target="_blank" rel="noopener">楽天で買う</a>` : '';
+  if (S.buyFor === bid) return `<div class="buyform"><select id="bt"><option>複勝</option><option>単勝</option></select><input id="bamt" type="number" inputmode="numeric" step="100" min="100" value="${stake}" aria-label="金額"><span>円</span>
+    <button class="btn small primary" type="button" data-save="${esc(bid)}">記録する</button><button class="btn small" type="button" data-cancelbuy="1">やめる</button></div>`;
+  return `<div class="actions">${o.bank.start ? `<span class="stake">複勝 <b>¥${stake.toLocaleString()}</b>（資金の2%）</span>` : `<span class="stake">資金を「収支」で入れると購入額を出します</span>`}
+    ${link}${bought.length ? `<span class="pill on">記録済み ¥${bought.reduce((a, b) => a + b.stake, 0).toLocaleString()}</span>` : `<button class="btn small" type="button" data-buy="${esc(bid)}">買った</button>`}</div>`;
+}
+function pickCard(p, bank, bs){
   const marks = LV.filter(m => (p.marks || []).includes(m));
+  const res = resultOf(p.date, p.id, p.uma);
   const state = p.cancelled ? '<span class="pill 見送り">見送りに変更</span>' : p.kind === 'update' ? '<span class="pill 変更">変更あり</span>' : '';
+  const rpill = res ? (res.pay ? `<span class="pill hit">${res.pos}着 複勝${res.pay}円</span>` : `<span class="pill miss">${res.pos ? res.pos + '着' : '着外'}</span>`) : '';
+  const d = DATA.days[p.date]; const r = d && d.races.find(x => x.key === p.id);
+  const rid = p.rid || (r && r.id);
   return `<article class="card pick ${p.cancelled ? 'cancel' : ''} ${p.id === focusId ? 'hl' : ''}" id="p-${esc(p.id)}">
-    <div class="race"><b>${esc(p.track)} ${p.rno}R</b>${marks.map(m => `<span class="pill ${m}">${m}</span>`).join('')}${state}<span class="post">発走 ${esc(p.post)}</span></div>
+    <div class="race"><b>${esc(p.track)} ${p.rno}R</b>${marks.map(m => `<span class="pill ${m}">${m}</span>`).join('')}${state}${rpill}<span class="post">発走 ${esc(p.post)}</span></div>
     <span class="uma w${p.waku || ''}">${p.uma}</span>
     <div style="min-width:0"><div class="hname">${esc(p.name)}</div>
       <div class="metrics"><div><small>複勝</small><span>${p.place != null ? (+p.place).toFixed(1) : '–'}</span><em>倍</em></div><div><small>3着内率</small><span>${p.p3 != null ? Math.round(p.p3 * 100) : '–'}</span><em>%</em></div><div><small>期待値</small><span>${p.ev != null ? (+p.ev).toFixed(2) : '–'}</span><small>単勝${p.tan != null ? (+p.tan).toFixed(1) : '–'}倍</small></div></div></div>
+    ${p.cancelled ? '' : buyBlock({ key: p.id, date: p.date, track: p.track, rno: p.rno, post: p.post, uma: p.uma, name: p.name, rid, bank, bets: bs })}
     <div class="note">${p.cancelled ? esc(p.body) : p.at ? `${ago(p.at)} のオッズで判定` : ''}</div></article>`;
 }
 
-document.addEventListener('click', e => {
+// ---- 出馬表タブ
+const FBAD = new Set(['持ち時計なし']);
+async function renderCard(){
+  const date = todayStr();
+  const d = await loadDay(date);
+  if (!d) return noData();
+  const tracks = [...new Set(d.races.map(r => r.track))];
+  if (!S.track || !tracks.includes(S.track)) S.track = tracks[0];
+  if (S.race){ const r = d.races.find(x => x.key === S.race); if (r) return raceDetail(d, r); S.race = null; }
+  const now = new Date(), nowHM = now.toLocaleTimeString('sv-SE', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit' }).replace(':', '');
+  const rs = d.races.filter(r => r.track === S.track);
+  return `<div class="row" style="justify-content:space-between"><h2>${fmtDay(date)}の出馬表</h2><button class="btn small" type="button" data-reload="1">更新</button></div>
+  <div class="chips">${tracks.map(t => `<button class="chip" data-track="${esc(t)}" aria-pressed="${t===S.track}">${esc(t)}</button>`).join('')}</div>
+  <div class="rlist">${rs.map(r => {
+    const pk = r.pick && r.pick.buy ? r.horses.find(h => h.uma === r.pick.uma) : null;
+    const lv = r.pick ? (r.pick.marks || []).filter(m => LV.includes(m)) : [];
+    const win = r.result && r.result.order[0];
+    return `<button type="button" class="rrow ${r.result ? 'done' : ''}" data-race="${esc(r.key)}"><span class="rno">${r.rno}R</span>
+      <span style="min-width:0"><span class="rn" style="display:block">${esc(r.name)}</span><span class="rs">${esc(r.surf === '芝' ? '芝' : r.surf === 'ダート' ? 'ダ' : '')}${r.dist}m・${r.n}頭${r.going ? '・' + esc(r.going) : ''}${r.label ? '・' + esc(r.label) : ''}</span>
+      ${pk ? `<span class="rs" style="display:block">${lv.map(m => `<span class="pill ${m}">${m}</span>`).join(' ') || '<span class="pill 見送り">買い</span>'} ${pk.uma}番 ${esc(pk.name)}</span>` : ''}</span>
+      <span class="rt">${hhmm(r.post)}${win ? `<br><span class="pos p1">${win}</span>` : String(r.post).padStart(4,'0') > nowHM && r.oddsAt ? '<br>オッズ有' : ''}</span></button>`;
+  }).join('')}</div>
+  <p class="lead" style="font-size:12px">${d.at ? new Date(d.at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) + ' 時点。' : ''}オッズは締切12分前と5分前に読んだ値です。</p>`;
+}
+function noData(){
+  if (DATA.err === 'nokey') return `<div class="card empty"><b>予想データの鍵がまだありません</b>PCで <span class="num">node set-token.js</span> を動かすと、このiPhoneに鍵が届いて出馬表やデータが見られるようになります。</div>`;
+  return `<div class="card empty"><b>今日の出馬表はまだありません</b>${esc(DATA.err || 'PCのプログラムが動くと、ここに今日のレースと予想が出ます。')}<div style="margin-top:12px"><button class="btn small" type="button" data-reload="1">もう一度読む</button></div></div>`;
+}
+async function raceDetail(d, r){
+  const bank = await bankroll(), bs = await bets();
+  const hs = [...r.horses];
+  const by = { uma: (a, b) => a.uma - b.uma, p3: (a, b) => (b.p3 || 0) - (a.p3 || 0), ev: (a, b) => (b.ev || 0) - (a.ev || 0), pop: (a, b) => (a.pop || 99) - (b.pop || 99) }[S.sort];
+  hs.sort(by);
+  const pk = r.pick && r.pick.buy ? r.pick.uma : null;
+  const lv = r.pick ? (r.pick.marks || []).filter(m => LV.includes(m)) : [];
+  const res = r.result;
+  return `<div class="row" style="justify-content:space-between"><button class="back" type="button" data-backrace="1">‹ ${esc(r.track)}のレース一覧</button><button class="btn small" type="button" data-reload="1">更新</button></div>
+  <section class="card">
+    <div class="race" style="margin-bottom:6px"><b>${esc(r.track)} ${r.rno}R</b>${lv.map(m => `<span class="pill ${m}">${m}</span>`).join('')}<span class="post">発走 ${hhmm(r.post)}</span></div>
+    <div style="font-weight:700">${esc(r.name)}</div>
+    <div class="hs" style="font-size:12px;color:var(--mute)">${esc(r.surf)} ${r.dist}m・${r.n}頭${r.going ? '・馬場 ' + esc(r.going) : ''}${r.label ? '・' + esc(r.label) : ''}${r.oddsAt ? '・' + ago(r.oddsAt) + 'のオッズ' : '・オッズ未取得'}</div>
+    ${res ? `<div class="summary" style="margin-top:8px">結果　${res.order.slice(0, 3).map((u, i) => `${i + 1}着 ${u}番`).join('・')}　複勝 ${res.place.map(x => `${x[0]}番${x[1]}円`).join(' ')}</div>` : ''}
+    ${pk ? `<div class="summary" style="margin-top:8px">期待値複勝の買い：<b>${pk}番 ${esc((r.horses.find(h => h.uma === pk) || {}).name)}</b></div>` : r.pick && r.pick.why ? `<div class="summary" style="margin-top:8px">期待値複勝：${esc(r.pick.why)}</div>` : ''}
+    <div class="row" style="margin-top:8px">${r.id ? `<a class="btn small primary" href="${BET}${esc(r.id)}" target="_blank" rel="noopener">楽天で買う</a><a class="btn small" href="${RAKUTEN}/odds/tanfuku/RACEID/${esc(r.id)}" target="_blank" rel="noopener">オッズ</a>` : ''}</div>
+  </section>
+  <div class="sort">並べ替え <span class="chips">${[['uma','馬番'],['p3','3着内率'],['ev','期待値'],['pop','人気']].map(([k,l]) => `<button class="chip" data-sort="${k}" aria-pressed="${S.sort===k}">${l}</button>`).join('')}</span></div>
+  <section class="card" style="padding-block:4px">${hs.map(h => {
+    const tags = [];
+    if (h.style) tags.push(`<span class="tag">${esc(h.style)}</span>`);
+    if (h.kire != null && Math.abs(h.kire) >= 0.3) tags.push(`<span class="tag ${h.kire > 0 ? 'p' : 'n'}">キレ ${h.kire > 0 ? '+' : ''}${h.kire}秒</span>`);
+    if (h.blood) tags.push(`<span class="tag b">${h.blood === 'good' ? '血統◎ この馬場' : '血統△ この馬場'}</span>`);
+    for (const [l, s] of h.f || []) if (!FBAD.has(l) || s < 0) tags.push(`<span class="tag ${s > 0 ? 'p' : 'n'}">${esc(l)}${s > 0 ? '＋' : '−'}</span>`);
+    const isPick = h.uma === pk;
+    return `<div class="hrow ${isPick ? 'pick' : ''} ${h.scr ? 'scr' : ''}">
+      <span class="uma s w${h.waku}">${h.uma}</span>
+      <div style="min-width:0"><div class="hn">${h.pos ? `<span class="pos p${h.pos <= 3 ? h.pos : ''}">${h.pos}</span> ` : ''}${esc(h.name)}${h.scr ? '（取消）' : ''}</div>
+        <div class="hs">${esc(h.sa)}・${esc(h.carry)}kg・${esc(h.jockey)}<br>父 ${esc(h.sire)}${h.damsire ? '／母父 ' + esc(h.damsire) : ''}</div></div>
+      <div class="hv">${h.p3 != null ? `<b>${Math.round(h.p3 * 100)}</b>%<br>` : ''}${h.place ? `複${h.place.toFixed(1)}` : ''}${h.tan ? ` 単${h.tan.toFixed(1)}` : ''}${h.ev != null ? `<br>期待値 <b style="font-size:13px;color:${h.ev >= 1 ? 'var(--pos)' : 'var(--ink)'}">${h.ev.toFixed(2)}</b>` : ''}${h.pop ? `<br>${h.pop}人気` : ''}</div>
+      <div class="tags">${tags.join('')}</div>
+      ${isPick && !res ? `<div style="grid-column:1/-1">${buyBlock({ key: r.key, date: d.date, track: r.track, rno: r.rno, post: hhmm(r.post), uma: h.uma, name: h.name, rid: r.id, bank, bets: bs })}</div>` : ''}
+    </div>`;
+  }).join('')}</section>
+  <p class="lead" style="font-size:12px">数字は「3着内に入る確率」（データとオッズから計算）、複勝・単勝のオッズ、複勝の期待値（3着内率×複勝オッズ）。タグはその馬の予想で効いている材料です（＋は追い風、−は向かい風）。自分で買うときの参考に。</p>`;
+}
+
+// ---- 収支タブ
+async function renderMoney(){
+  const bs = await bets();
+  for (const dt of [...new Set(bs.map(b => b.date))].slice(0, 20)) await loadDay(dt);
+  const bank = await bankroll();
+  const settled = bs.filter(b => (b.back != null ? b.back : settle(b)) != null);
+  const pl = bank.back - bank.settledStake;
+  const roi = bank.settledStake ? bank.back / bank.settledStake : NaN;
+  const hits = settled.filter(b => (b.back != null ? b.back : settle(b)) > 0).length;
+  let h = `<section class="card"><h2 style="margin-bottom:8px">資金</h2>
+    <div class="row"><label for="bank" style="font-size:14px">スタート資金</label><input id="bank" type="number" inputmode="numeric" step="1000" min="0" value="${bank.start || ''}" placeholder="例：30000" style="width:130px"><span>円</span><button class="btn small" type="button" data-savebank="1">保存</button></div>
+    <p class="lead" style="margin-top:8px">1回の購入額は「いまの資金の2%」（100円単位、最低100円）。いまの資金＝スタート資金−買った額＋払戻。</p>
+    <div class="stats">
+      <div class="stat"><small>いまの資金</small><b>${yen(bank.now)}</b></div>
+      <div class="stat"><small>次の1点</small><b>${yen(stakeOf(bank.now))}</b></div>
+      <div class="stat"><small>収支（確定分）</small><b class="${pl >= 0 ? 'plus' : 'minus'}">${pl >= 0 ? '+' : ''}${yen(pl)}</b></div>
+      <div class="stat"><small>回収率</small><b>${pct(roi)}</b><small>${hits}／${settled.length}的中${bank.open ? '・結果待ち ' + yen(bank.open) : ''}</small></div>
+    </div></section>`;
+  if (!bs.length) h += `<div class="card empty"><b>まだ記録がありません</b>通知や出馬表の「買った」を押すと、ここに並び、レース後に結果が自動で反映されます。</div>`;
+  else {
+    const days = [...new Set(bs.map(b => b.date))];
+    h += days.map(dt => {
+      const xs = bs.filter(b => b.date === dt);
+      let s = 0, bk = 0; for (const b of xs){ const v = b.back != null ? b.back : settle(b); if (v != null){ s += b.stake; bk += v; } }
+      return `<section class="day"><div class="dayhead"><h3>${fmtDay(dt)}</h3><span class="${bk - s >= 0 ? 'plus' : 'minus'}">${s ? (bk - s >= 0 ? '+' : '') + yen(bk - s) : ''}</span></div>
+      <div class="card" style="padding-block:4px">${xs.map(b => {
+        const v = b.back != null ? b.back : settle(b);
+        return `<div class="hrow" style="grid-template-columns:minmax(0,1fr) auto auto"><div style="min-width:0"><div class="hn">${esc(b.track)} ${b.rno}R　${b.uma}番 ${esc(b.name)}</div><div class="hs">${esc(b.type)} ${yen(b.stake)}・発走 ${esc(b.post)}</div></div>
+          <div class="hv">${v == null ? '<span class="pill off">結果待ち</span>' : v > 0 ? `<span class="pill hit">+${yen(v - b.stake)}</span><br>払戻 ${yen(v)}` : `<span class="pill miss">−${yen(b.stake).replace('¥','¥')}</span>`}</div>
+          <button class="btn small" type="button" data-delbet="${esc(b.id)}" aria-label="この記録を消す">消す</button></div>`;
+      }).join('')}</div></section>`;
+    }).join('');
+  }
+  return h;
+}
+
+// ---- データタブ（競馬場・コース・血統）
+const biasBars = (a, labels) => (a || []).length ? `<span class="bar" title="${labels.join('・')}">${a.map((x, i) => { if (!x) return '<i style="height:2px"></i>'; const v = x[0], z = x[1]; const hgt = Math.max(3, Math.min(16, 8 + (v - 1) * 30)); return `<i class="${Math.abs(z) >= 2 ? (v > 1 ? 'up' : 'dn') : ''}" style="height:${hgt}px"></i>`; }).join('')}</span> <span class="num" style="font-size:11px;color:var(--mute)">${a.map(x => x ? x[0].toFixed(2) : '–').join('/')}</span>` : '–';
+async function renderData(){
+  const st = await loadStatic();
+  if (!st) return noData();
+  const tks = Object.keys(st.tracks).sort((a, b) => st.tracks[b].races - st.tracks[a].races);
+  if (!S.dtrack || !st.tracks[S.dtrack]) { const d = DATA.days[todayStr()]; S.dtrack = d && d.races[0] && st.tracks[d.races[0].track] ? d.races[0].track : tks[0]; }
+  const t = st.tracks[S.dtrack];
+  const cs = st.courses.filter(c => c.track === S.dtrack).sort((a, b) => a.dist - b.dist);
+  const ban = S.dtrack === '帯広(ば)';
+  const q = S.bq.trim();
+  const sk = { wet: x => (x.vw || 0) - (x.vd || 0), dry: x => (x.vd || 0) - (x.vw || 0), n: x => x.nd + x.nw }[S.bsort];
+  const sires = st.sires.filter(x => (!q || x.name.includes(q)) && x.nd >= 30 && x.nw >= 20).sort((a, b) => sk(b) - sk(a)).slice(0, 60);
+  const sv = v => v == null ? '–' : `<span class="${v >= 0.015 ? 'plus' : v <= -0.015 ? 'minus' : ''}">${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}</span>`;
+  return `<section class="card"><h2 style="margin-bottom:8px">競馬場・コース</h2>
+    <div class="chips" style="margin-bottom:10px">${tks.map(k => `<button class="chip" data-dtrack="${esc(k)}" aria-pressed="${k===S.dtrack}">${esc(k)}</button>`).join('')}</div>
+    <div class="stats">
+      <div class="stat"><small>傾向</small><b style="font-size:17px">${esc(t.label)}</b><small>${t.races}レース</small></div>
+      <div class="stat"><small>1番人気</small><b>${pct(t.f1w)}</b><small>3着内 ${pct(t.f1t)}・勝ち馬平均${t.wpop}人気</small></div>
+      <div class="stat"><small>枠（内/中/外）</small>${biasBars(t.frame, ['内','中','外'])}</div>
+      <div class="stat"><small>位置取り（前/中/後）</small>${ban ? '–' : biasBars(t.early, ['前','中','後'])}</div>
+    </div>
+    <div class="tw" style="margin-top:10px"><table><thead><tr><th>距離</th><th class="r">R数</th><th class="r">1人気勝</th><th>傾向</th><th>枠 内/中/外</th>${ban ? '' : '<th>位置 前/中/後</th><th class="r">差し</th>'}</tr></thead><tbody>
+    ${cs.map(c => `<tr><td><b>${c.dist}m</b></td><td class="r num">${c.races}</td><td class="r num">${pct(c.f1w)}</td><td>${esc(c.label)}</td><td>${biasBars(c.frame, ['内','中','外'])}</td>${ban ? '' : `<td>${biasBars(c.early, ['前','中','後'])}</td><td class="r num">${pct(c.kire)}</td>`}</tr>`).join('')}
+    </tbody></table></div>
+    <p class="lead" style="font-size:12px;margin-top:8px">枠・位置は「3着内に来た数÷期待の数」。1.00が平均、緑・赤の棒は偶然では説明しにくい差。差しは3着内のうち最初のコーナーで中団より後ろだった割合。</p></section>
+  <section class="card"><h2 style="margin-bottom:8px">血統×馬場（父）</h2>
+    <div class="row" style="margin-bottom:8px"><input id="bq" type="search" value="${esc(q)}" placeholder="父の名前で探す" style="flex:1"></div>
+    <div class="chips" style="margin-bottom:8px">${[['wet','重・不良が得意'],['dry','良・稍重が得意'],['n','出走数']].map(([k,l]) => `<button class="chip" data-bsort="${k}" aria-pressed="${S.bsort===k}">${l}</button>`).join('')}</div>
+    <div class="tw"><table><thead><tr><th>父</th><th class="r">良稍 3着内</th><th class="r">比</th><th class="r">重不 3着内</th><th class="r">比</th></tr></thead><tbody>
+    ${sires.map(x => `<tr><td><b>${esc(x.name)}</b></td><td class="r num">${pct(x.td)}<span style="color:var(--mute);font-size:11px"> ${x.nd}</span></td><td class="r num">${sv(x.vd)}</td><td class="r num">${pct(x.tw)}<span style="color:var(--mute);font-size:11px"> ${x.nw}</span></td><td class="r num">${sv(x.vw)}</td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--mute)">該当する父がいません</td></tr>'}
+    </tbody></table></div>
+    <p class="lead" style="font-size:12px;margin-top:8px">「比」は実際の3着内率がオッズから見た確率より何ポイント多いか（＋なら人気以上に走る）。小さい数字は出走数。予想では＋1.5以上を血統◎、−1.5以下を血統△として出しています。</p></section>`;
+}
+
+// ---- 画面
+async function render(){
+  document.querySelectorAll('nav.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.tab === S.tab ? 'page' : 'false'));
+  const v = $('#view');
+  const html = S.tab === 'card' ? await renderCard() : S.tab === 'money' ? await renderMoney() : S.tab === 'data' ? await renderData() : await renderPicks();
+  const keep = document.activeElement && document.activeElement.id === 'bq' ? document.activeElement.selectionStart : null;
+  v.innerHTML = html;
+  if (keep != null){ const el = $('#bq'); if (el){ el.focus(); el.setSelectionRange(keep, keep); } }
+  if (focusId && S.tab === 'picks'){ const el = document.getElementById('p-' + focusId); if (el) el.scrollIntoView({ block: 'center' }); }
+}
+async function saveBet(bid){
+  const [track, date, rno, uma] = bid.split('|');
+  const key = `${track}|${date}|${rno}`;
+  const amt = Math.round(+($('#bamt') || {}).value || 0); const type = ($('#bt') || {}).value || '複勝';
+  if (!(amt >= 100)) return toast('100円以上で入れてください');
+  const d = DATA.days[date]; const r = d && d.races.find(x => x.key === key);
+  const pk = (await getAll(notifDb, 'picks')).find(p => p.id === key);
+  const h = r ? r.horses.find(x => x.uma === +uma) : null;
+  const tr = r ? r.track : pk ? pk.track : track;
+  await put(appDb, 'bets', { id: bid + '|' + type + '|' + Date.now(), raceKey: key, date, track: tr, rno: +rno, post: r ? hhmm(r.post) : pk ? pk.post : '', uma: +uma, name: h ? h.name : pk ? pk.name : '', type, stake: amt, at: new Date().toISOString() });
+  S.buyFor = null; toast('記録しました'); render();
+}
+
+document.addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.tab){ S.tab = b.dataset.tab; S.race = null; ls.set('kb-tab', S.tab); window.scrollTo(0, 0); return render(); }
   if (b.id === 'enable') return enable();
   if (b.id === 'copy') return copy($('#code').textContent);
-  if (b.id === 'done'){ try { localStorage.setItem('kb-registered', '1'); } catch (er) {} toast('PCから「node test-push.js」でテスト通知を送ってみてください'); return renderSetup(); }
-  if (b.dataset.f){ filter = b.dataset.f; try { localStorage.setItem('kb-filter', filter); } catch (er) {} return renderList(); }
-  if (b.id === 'clear'){ confirmClear = true; return renderList(); }
-  if (b.id === 'clearNo'){ confirmClear = false; return renderList(); }
-  if (b.id === 'clearYes'){ confirmClear = false; clear().then(renderList); toast('履歴を消しました'); return; }
-  if (b.id === 'testLocal'){
-    if (!reg || Notification.permission !== 'granted') return toast('先に「通知をオンにする」を押してください');
-    reg.showNotification('hihi-N', { body: 'このiPhoneで通知が表示できました', icon: 'icon-192.png' }); return;
-  }
+  if (b.id === 'done'){ ls.set('kb-registered', '1'); toast('PCから「node test-push.js」でテスト通知を送ってみてください'); return renderSetup(); }
+  if (b.dataset.f){ S.filter = b.dataset.f; ls.set('kb-filter', S.filter); return render(); }
+  if (b.id === 'clear'){ confirmClear = true; return render(); }
+  if (b.id === 'clearNo'){ confirmClear = false; return render(); }
+  if (b.id === 'clearYes'){ confirmClear = false; await clearPicks(); toast('履歴を消しました'); return render(); }
+  if (b.id === 'testLocal'){ if (!reg || Notification.permission !== 'granted') return toast('先に「通知をオンにする」を押してください'); reg.showNotification('hihi-N', { body: 'このiPhoneで通知が表示できました', icon: 'icon-192.png' }); return; }
+  if (b.dataset.track){ S.track = b.dataset.track; return render(); }
+  if (b.dataset.race){ S.race = b.dataset.race; S.sort = 'uma'; window.scrollTo(0, 0); return render(); }
+  if (b.dataset.backrace){ S.race = null; return render(); }
+  if (b.dataset.sort){ S.sort = b.dataset.sort; return render(); }
+  if (b.dataset.reload){ await loadDay(todayStr(), true); toast('最新のデータを読みました'); return render(); }
+  if (b.dataset.buy){ S.buyFor = b.dataset.buy; return render(); }
+  if (b.dataset.cancelbuy){ S.buyFor = null; return render(); }
+  if (b.dataset.save) return saveBet(b.dataset.save);
+  if (b.dataset.savebank){ const v = Math.round(+$('#bank').value || 0); ls.set('kb-bank', String(v)); toast('スタート資金を保存しました'); return render(); }
+  if (b.dataset.delbet){ if (b.dataset.sure){ await del(appDb, 'bets', b.dataset.delbet); toast('記録を消しました'); return render(); } b.dataset.sure = '1'; b.textContent = 'もう一度押すと消す'; return; }
+  if (b.dataset.dtrack){ S.dtrack = b.dataset.dtrack; return render(); }
+  if (b.dataset.bsort){ S.bsort = b.dataset.bsort; return render(); }
 });
-navigator.serviceWorker && navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'refresh') renderList(); });
-document.addEventListener('visibilitychange', () => { if (!document.hidden) renderList(); });
+document.addEventListener('input', e => { if (e.target.id === 'bq'){ S.bq = e.target.value; clearTimeout(render.t); render.t = setTimeout(render, 250); } });
+navigator.serviceWorker && navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'refresh') { DATA.stat = DATA.stat || null; render(); } });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+setInterval(() => { if (!document.hidden && (S.tab === 'card' || S.tab === 'picks') && !S.buyFor && !(document.activeElement && /INPUT|SELECT/.test(document.activeElement.tagName))) render(); }, 120000);
 
 (async function init(){
   if ('serviceWorker' in navigator){
     try { reg = await navigator.serviceWorker.register('sw.js'); await navigator.serviceWorker.ready; sub = await reg.pushManager.getSubscription(); } catch (e) {}
   }
-  renderSetup(); renderList();
+  renderSetup(); render();
 })();
 })();
 </script>
