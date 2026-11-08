@@ -50,7 +50,7 @@ h2{font-size:16px;margin:0}
 .pill{display:inline-block;font-size:11px;font-weight:700;border-radius:4px;padding:2px 7px;white-space:nowrap;line-height:1.5}
 .pill.on{background:var(--posSoft);color:var(--pos)}.pill.off{background:var(--soft);color:var(--mute);border:1px solid var(--line)}
 .pill.本線{background:var(--accent);color:#1a1200}.pill.狙い目{background:var(--accentSoft);color:var(--accentInk)}
-.pill.穴{background:var(--negSoft);color:var(--neg)}.pill.血統◎{background:var(--blueSoft);color:var(--blue)}
+.pill.穴{background:var(--negSoft);color:var(--neg)}.pill.人気{background:var(--blueSoft);color:var(--blue)}.pill.血統◎{background:var(--blueSoft);color:var(--blue)}
 .pill.変更{background:var(--blueSoft);color:var(--blue)}.pill.見送り{background:var(--soft);color:var(--mute);border:1px solid var(--line)}
 .pill.hit{background:var(--posSoft);color:var(--pos)}.pill.miss{background:var(--soft);color:var(--mute);border:1px solid var(--line)}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
@@ -135,6 +135,9 @@ nav.tabs button[aria-current="page"]{color:var(--accentInk)}
 .resrow .ord{display:inline-flex;align-items:center;gap:3px}
 .resrow .ord small{font-size:11px;color:var(--mute)}
 .resrow .dash{color:var(--mute)}
+.recbox{display:flex;flex-direction:column;gap:2px;margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--accentSoft);color:var(--accentInk);font-size:13px}
+.recbox b{font-size:12px}
+.recbox span{color:var(--ink)}
 .pbox{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;padding:8px 10px;background:var(--soft);border-radius:8px;margin-bottom:6px;font-size:13px}
 .pbox b{white-space:nowrap}
 .pbox span{color:var(--mute)}
@@ -345,7 +348,7 @@ function buyBlock(o){
     ${link}${bought.length ? `<span class="pill on">記録済み ¥${bought.reduce((a, b) => a + b.stake, 0).toLocaleString()}</span>` : `<button class="btn small" type="button" data-buy="${esc(bid)}">買った</button>`}</div>`;
 }
 function pickCard(p, bank, bs){
-  const marks = LV.filter(m => (p.marks || []).includes(m));
+  const marks = [(p.marks || []).includes('穴') ? '穴' : '人気'];
   const res = resultOf(p.date, p.id, p.uma);
   const state = p.cancelled ? '<span class="pill 見送り">見送りに変更</span>' : p.kind === 'confirm' ? '<span class="pill hit">買えます</span>' : p.kind === 'update' ? '<span class="pill 変更">馬が変わりました</span>' : '<span class="pill 変更">候補（5分前に確定）</span>';
   const rpill = res ? (res.pay ? `<span class="pill hit">${res.pos}着 複勝${res.pay}円</span>` : `<span class="pill miss">${res.pos ? res.pos + '着' : '着外'}</span>`) : '';
@@ -378,8 +381,8 @@ async function renderCard(){
     const lv = r.pick ? (r.pick.marks || []).filter(m => LV.includes(m)) : [];
     const win = r.result && r.result.order[0];
     return `<button type="button" class="rrow ${r.result ? 'done' : ''}" data-race="${esc(r.key)}"><span class="rno">${r.rno}R</span>
-      <span style="min-width:0"><span class="rn" style="display:block">${esc(r.name)}</span><span class="rs">${esc(r.surf === '芝' ? '芝' : r.surf === 'ダート' ? 'ダ' : '')}${r.dist}m・${r.n}頭${r.going ? '・' + esc(r.going) : ''}${r.label ? '・' + esc(r.label) : ''}</span>
-      ${pk ? `<span class="rs" style="display:block">${lv.map(m => `<span class="pill ${m}">${m}</span>`).join(' ') || '<span class="pill 見送り">買い</span>'} ${pk.uma}番 ${esc(pk.name)}</span>` : ''}</span>
+      <span style="min-width:0"><span class="rn" style="display:block">${lv.map(m => `<span class="pill ${m}" style="margin-right:4px">${m}</span>`).join('')}${esc(r.name)}</span><span class="rs">${esc(r.surf === '芝' ? '芝' : r.surf === 'ダート' ? 'ダ' : '')}${r.dist}m・${r.n}頭${r.going ? '・' + esc(r.going) : ''}${r.label ? '・' + esc(r.label) : ''}</span>
+      ${pk ? `<span class="rs" style="display:block">期待値1位 ${pk.uma}番 ${esc(pk.name)}</span>` : ''}</span>
       <span class="rt">${hhmm(r.post)}${win ? `<br><span class="pos p1">${win}</span>` : String(r.post).padStart(4,'0') > nowHM && r.oddsAt ? '<br>オッズ有' : ''}</span></button>`;
   }).join('')}</div>
   <p class="lead" style="font-size:12px">${d.at ? new Date(d.at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) + ' 時点。' : ''}オッズは発走12分前と5分前に読んだ値です（締切直前にはさらに下がることが多い）。</p>`;
@@ -406,13 +409,16 @@ async function raceDetail(d, r){
   const pk = r.pick && r.pick.buy ? r.pick.uma : null;
   const lv = r.pick ? (r.pick.marks || []).filter(m => LV.includes(m)) : [];
   const res = r.result;
-  return `<div class="row" style="justify-content:space-between"><button class="back" type="button" data-backrace="1">‹ ${esc(r.track)}のレース一覧</button><button class="btn small" type="button" data-reload="1">更新</button></div>
+  const reqd = (await loadReq()).has(r.key);
+  const st0 = await loadStatic();
+  const canReq = !res && String(r.post).padStart(4, '0') > new Date().toLocaleTimeString('sv-SE', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit' }).replace(':', '');
+  return `<div class="row" style="justify-content:space-between"><button class="back" type="button" data-backrace="1">‹ ${esc(r.track)}のレース一覧</button><span class="row">${canReq ? `<button class="btn small ${reqd ? 'primary' : ''}" type="button" data-req="${esc(r.key)}">${reqd ? '通知予約済み' : '通知'}</button>` : ''}<button class="btn small" type="button" data-reload="1">更新</button></span></div>
   <section class="card">
     <div class="race" style="margin-bottom:6px"><b>${esc(r.track)} ${r.rno}R</b>${lv.map(m => `<span class="pill ${m}">${m}</span>`).join('')}<span class="post">発走 ${hhmm(r.post)}</span></div>
     <div style="font-weight:700">${esc(r.name)}</div>
-    <div class="hs" style="font-size:12px;color:var(--mute)">${esc(r.surf)} ${r.dist}m・${r.n}頭${r.going ? '・馬場 ' + esc(r.going) : ''}${r.label ? '・' + esc(r.label) : ''}${r.oddsAt ? '・' + ago(r.oddsAt) + 'のオッズ' : '・オッズ未取得'}</div>
+    <div class="hs" style="font-size:12px;color:var(--mute)">${esc(r.surf)} ${r.dist}m・${r.n}頭${r.going ? '・馬場 ' + esc(r.going) : ''}${r.label ? '・' + esc(r.label) : ''}${r.oddsAt ? '・' + ago(r.oddsAt) + 'のオッズ' : r.oddsSaved ? '・最後に読んだオッズ' : '・オッズ未取得'}</div>
     ${res ? resultBox(r, res) : ''}
-    ${pk ? `<div class="summary" style="margin-top:8px">期待値複勝の買い：<b>${pk}番 ${esc((r.horses.find(h => h.uma === pk) || {}).name)}</b></div>` : r.pick && r.pick.why ? `<div class="summary" style="margin-top:8px">期待値複勝：${esc(r.pick.why)}</div>` : ''}
+    <div class="recbox"><b>このレースの買い方</b><span>${esc(recommend(r, st0))}</span></div>
     <div class="row" style="margin-top:8px">${r.id ? `<a class="btn small primary" href="${BET}${esc(r.id)}" target="_blank" rel="noopener">楽天で買う</a><a class="btn small" href="${RAKUTEN}/odds/tanfuku/RACEID/${esc(r.id)}" target="_blank" rel="noopener">オッズ</a>` : ''}</div>
   </section>
   <div class="sort">並べ替え <span class="chips">${[['uma','馬番'],['p3','3着内率'],['ev','期待値'],['pop','人気']].map(([k,l]) => `<button class="chip" data-sort="${k}" aria-pressed="${S.sort===k}">${l}</button>`).join('')}</span></div>
@@ -434,6 +440,55 @@ async function raceDetail(d, r){
   }).join('')}</section>
   ${await paceBox(r)}
   <p class="lead" style="font-size:12px">数字は「3着内に入る確率」（データとオッズから計算）、複勝・単勝のオッズ、複勝の期待値（3着内率×複勝オッズ）。タグはその馬の予想で効いている材料です（＋は追い風、−は向かい風）。自分で買うときの参考に。</p>`;
+}
+
+// ---- このレースの買い方（過去半年の同じタイプの成績から）
+function recommend(v, st){
+  const m6 = st && st.rules && st.rules.m6;
+  const roi = o => o && o.n ? `過去半年 ${o.n}頭・的中${Math.round(o.hit / o.n * 100)}%・回収率${Math.round(o.ret / o.n)}%` : '';
+  const p = v.pick;
+  if (!p) return 'オッズがまだ無いので判定できません（発走60分前から出ます）';
+  const h = v.horses.find(x => x.uma === p.uma) || {};
+  if (!p.buy) return `見送りがおすすめ（${p.why || '条件に合う馬がいない'}）`;
+  if (p.promote && p.blood !== 'bad' && !p.kireHigh) return `おすすめ：${p.uma}番 ${h.name} の複勝（本線・${p.ana ? '穴' : '人気'}）。${roi(m6 && m6[p.ana ? 'ana' : 'fav'])}`;
+  if (p.promote) return `見送り寄り：${p.uma}番は展開が向くが${p.blood === 'bad' ? '父がこの馬場を苦手' : 'キレで人気をかぶりやすい'}。このタイプは${roi(m6 && m6.cat && m6.cat.upOut)}`;
+  return `見送り寄り：期待値1位は${p.uma}番 ${h.name}（複${p.place}倍）だが展開が向かない。このタイプは${roi(m6 && m6.cat && m6.cat.buyOnly)}`;
+}
+// ---- 「通知」ボタン：発走7分前に、このレースの分析を1回だけ通知してもらう（PCが2分ごとに見る）
+let REQ = null;
+async function ghFile(name){
+  const tok = await kv('ghToken'); const repo = (await kv('repo')) || repoName();
+  const r = await fetch(`https://api.github.com/repos/${repo}/contents/${name}?ref=data&t=${Date.now()}`, { headers: tok ? { Authorization: 'Bearer ' + tok, Accept: 'application/vnd.github+json' } : { Accept: 'application/vnd.github+json' }, cache: 'no-store' });
+  if (r.status === 404) return { sha: null, text: null };
+  if (!r.ok) throw new Error('GitHub ' + r.status);
+  const j = await r.json(); return { sha: j.sha, text: atob(j.content.replace(/\n/g, '')) };
+}
+async function encrypt(obj){
+  const kb = Uint8Array.from(atob(await kv('dataKey')), c => c.charCodeAt(0));
+  const key = await crypto.subtle.importKey('raw', kb, 'AES-GCM', false, ['encrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(obj))));
+  const all = new Uint8Array(12 + ct.length); all.set(iv); all.set(ct, 12);
+  let bin = ''; all.forEach(b => bin += String.fromCharCode(b)); return btoa(bin);
+}
+async function loadReq(force){
+  if (REQ && !force) return REQ;
+  try { const f = await ghFile(`req/${todayStr()}.enc`); REQ = new Set(f.text ? ((await decrypt(f.text, await kv('dataKey'))).races || []) : []); } catch (e) { REQ = REQ || new Set(); }
+  return REQ;
+}
+async function toggleReq(key){
+  const tok = await kv('ghToken');
+  if (!tok) return toast('PCで「node set-token.js」を動かしてEnterを押すと、このボタンが使えるようになります');
+  try {
+    const name = `req/${todayStr()}.enc`, f = await ghFile(name);
+    const cur = new Set(f.text ? ((await decrypt(f.text, await kv('dataKey'))).races || []) : []);
+    const on = !cur.has(key); on ? cur.add(key) : cur.delete(key);
+    const repo = (await kv('repo')) || repoName();
+    const body = { message: 'request', branch: 'data', content: btoa(await encrypt({ races: [...cur], at: new Date().toISOString() })), ...(f.sha ? { sha: f.sha } : {}) };
+    const r = await fetch(`https://api.github.com/repos/${repo}/contents/${name}`, { method: 'PUT', headers: { Authorization: 'Bearer ' + tok, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!r.ok) throw new Error('GitHub ' + r.status);
+    REQ = cur; toast(on ? '発走7分前に、このレースの分析を通知します' : '通知の予約をやめました'); render();
+  } catch (e) { toast('予約できませんでした（' + e.message + '）'); }
 }
 
 // ---- 展開・コースの予想（出馬表の下）
@@ -472,6 +527,11 @@ async function paceBox(r){
 }
 
 // ---- 収支タブ
+function posChip(b){
+  const d = DATA.days[b.date]; const r = d && d.races.find(x => x.key === b.raceKey); const h = r && r.horses.find(x => x.uma === b.uma);
+  if (!h || !h.pos) return r && r.result ? '<span class="pos">外</span>' : '';
+  return `<span class="pos p${h.pos <= 3 ? h.pos : ''}">${h.pos}着</span>`;
+}
 async function renderMoney(){
   const bs = await bets();
   for (const dt of [...new Set(bs.map(b => b.date))].slice(0, 20)) await loadDay(dt);
@@ -499,7 +559,7 @@ async function renderMoney(){
       return `<section class="day"><div class="dayhead"><h3>${fmtDay(dt)}</h3><span class="${bk - s >= 0 ? 'plus' : 'minus'}">${s ? (bk - s >= 0 ? '+' : '') + yen(bk - s) : ''}</span></div>
       <div class="card" style="padding-block:4px">${xs.map(b => {
         const v = b.back != null ? b.back : settle(b);
-        return `<div class="hrow" style="grid-template-columns:minmax(0,1fr) auto auto"><div style="min-width:0"><div class="hn">${esc(b.track)} ${b.rno}R　${b.uma}番 ${esc(b.name)}</div><div class="hs">${esc(b.type)} ${yen(b.stake)}・発走 ${esc(b.post)}</div></div>
+        return `<div class="hrow" style="grid-template-columns:minmax(0,1fr) auto auto"><div style="min-width:0"><div class="hn">${esc(b.track)} ${b.rno}R　${b.uma}番 ${esc(b.name)} ${posChip(b)}</div><div class="hs">${esc(b.type)} ${yen(b.stake)}・発走 ${esc(b.post)}</div></div>
           <div class="hv">${v == null ? '<span class="pill off">結果待ち</span>' : v > 0 ? `<span class="pill hit">+${yen(v - b.stake)}</span><br>払戻 ${yen(v)}` : `<span class="pill miss">−${yen(b.stake).replace('¥','¥')}</span>`}</div>
           <button class="btn small" type="button" data-delbet="${esc(b.id)}" aria-label="この記録を消す">消す</button></div>`;
       }).join('')}</div></section>`;
@@ -595,7 +655,8 @@ document.addEventListener('click', async e => {
   if (b.dataset.race){ S.race = b.dataset.race; S.sort = 'uma'; window.scrollTo(0, 0); return render(); }
   if (b.dataset.backrace){ S.race = null; return render(); }
   if (b.dataset.sort){ S.sort = b.dataset.sort; return render(); }
-  if (b.dataset.reload){ await loadDay(todayStr(), true); toast('最新のデータを読みました'); return render(); }
+  if (b.dataset.req) return toggleReq(b.dataset.req);
+  if (b.dataset.reload){ await loadDay(todayStr(), true); await loadReq(true); toast('最新のデータを読みました'); return render(); }
   if (b.dataset.buy){ S.buyFor = b.dataset.buy; return render(); }
   if (b.dataset.cancelbuy){ S.buyFor = null; return render(); }
   if (b.dataset.save) return saveBet(b.dataset.save);
