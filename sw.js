@@ -15,7 +15,7 @@ self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 self.addEventListener('push', e => {
   let p = {}; try { p = e.data ? e.data.json() : {}; } catch (err) { p = { title: 'hihi-N', body: e.data ? e.data.text() : '' }; }
   e.waitUntil((async () => {
-    if (p.type === 'key') { await setKv('dataKey', p.key); if (p.repo) await setKv('repo', p.repo); }
+    if (p.type === 'key') { await setKv('dataKey', p.key); if (p.repo) await setKv('repo', p.repo); if (p.token) await setKv('ghToken', p.token); }
     else if (p.id) await save(p);
     await self.registration.showNotification(p.title || 'hihi-N', { body: p.body || '', tag: p.id || undefined, icon: 'icon-192.png', badge: 'icon-192.png', data: { id: p.id, type: p.type } });
     for (const c of await self.clients.matchAll({ type: 'window' })) c.postMessage({ type: 'refresh' });
