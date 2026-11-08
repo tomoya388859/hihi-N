@@ -126,6 +126,25 @@ nav.tabs button[aria-current="page"]{color:var(--accentInk)}
 .tag.b{background:var(--blueSoft);color:var(--blue);border-color:transparent}
 .pos{display:inline-block;min-width:1.6em;text-align:center;font-family:var(--mono);font-weight:600;border-radius:4px;background:var(--soft);font-size:12px;padding:0 4px}
 .pos.p1{background:var(--accent);color:#1a1200}.pos.p2,.pos.p3{background:var(--accentSoft);color:var(--accentInk)}
+.resbox{margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:4px 12px;background:var(--soft)}
+.resrow{display:grid;grid-template-columns:3.6em minmax(0,1fr) auto;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}
+.resrow:first-child{border-top:0}
+.resrow .rl{font-size:12px;font-weight:700;color:var(--mute)}
+.resrow .rc{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.resrow .rp{font-weight:600;font-size:15px}
+.resrow .ord{display:inline-flex;align-items:center;gap:3px}
+.resrow .ord small{font-size:11px;color:var(--mute)}
+.resrow .dash{color:var(--mute)}
+.pbox{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;padding:8px 10px;background:var(--soft);border-radius:8px;margin-bottom:6px;font-size:13px}
+.pbox b{white-space:nowrap}
+.pbox span{color:var(--mute)}
+.ph{font-size:13px;margin:12px 0 6px}
+.pgrid{display:grid;grid-template-columns:4.6em minmax(0,1fr);gap:6px 8px;align-items:start}
+.pgrid .pl{font-size:12px;font-weight:700;color:var(--mute);padding-top:5px}
+.pgrid .pl.plus{color:var(--pos)}.pgrid .pl.minus{color:var(--neg)}
+.pgrid .pr{display:flex;flex-wrap:wrap;gap:4px}
+.hchip{display:inline-flex;align-items:center;gap:4px;font-size:12px;background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:2px 6px 2px 2px}
+.hchip .uma.s{width:22px;height:22px;font-size:12px;border-radius:4px}
 .back{border:0;background:none;color:var(--accentInk);font-weight:700;padding:0}
 .sort{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--mute)}
 /* 収支・データ */
@@ -274,7 +293,7 @@ function renderSetup(){
   }
   if (!('serviceWorker' in navigator) || !('PushManager' in window)){ box.hidden = false; box.innerHTML = '<h2>このブラウザは通知に対応していません</h2><p>iPhoneはiOS 16.4以降が必要です。</p>'; return; }
   if (!KEY){ box.hidden = false; box.innerHTML = '<h2>PCの設定がまだです</h2><p>PCで「node setup.js」を動かしてできた config.js を、このアプリと同じ場所に置いてください。</p>'; return; }
-  if (!on){ box.hidden = false; box.innerHTML = `<h2>通知をオンにする</h2><p>本線の買い馬が出たとき、発走の7分前ごろにこのiPhoneへ知らせます。</p><button class="btn primary" id="enable" type="button">通知をオンにする</button>`; return; }
+  if (!on){ box.hidden = false; box.innerHTML = `<h2>通知をオンにする</h2><p>本線の買い馬が出たとき、発走の12分前（候補）と5分前（買えます）にこのiPhoneへ知らせます。</p><button class="btn primary" id="enable" type="button">通知をオンにする</button>`; return; }
   if (!ls.get('kb-registered')){
     box.hidden = false;
     box.innerHTML = `<details open><summary>PCに登録する（最初に1回）</summary>
@@ -295,7 +314,7 @@ async function renderPicks(){
   const bank = await bankroll(), bs = await bets();
   const shown = picks.filter(p => S.filter === 'all' || (p.marks || []).includes(S.filter));
   let h = `<div class="chips" role="group" aria-label="絞り込み">${FILTERS.map(([k,l]) => `<button class="chip" data-f="${k}" aria-pressed="${S.filter===k}">${l}<span class="num"> ${k==='all'?picks.length:picks.filter(p => (p.marks||[]).includes(k)).length}</span></button>`).join('')}</div>`;
-  if (!picks.length) h += `<div class="card empty"><b>まだ通知はありません</b>レースの日は、PCが発走の12分前と7分前に楽天のオッズを読み、7分前の判定で本線が出たらここに並びます。</div>`;
+  if (!picks.length) h += `<div class="card empty"><b>まだ通知はありません</b>レースの日は、PCが発走の12分前と5分前に楽天のオッズを読み、本線が出たらここに並びます（12分前は候補、5分前で「買えます」か「見送り」が決まります）。</div>`;
   else if (!shown.length) h += `<div class="card empty"><b>この印の通知はありません</b>「すべて」に切り替えると全部の通知が見られます。</div>`;
   else {
     const days = [...new Set(shown.map(p => p.date))];
@@ -328,7 +347,7 @@ function buyBlock(o){
 function pickCard(p, bank, bs){
   const marks = LV.filter(m => (p.marks || []).includes(m));
   const res = resultOf(p.date, p.id, p.uma);
-  const state = p.cancelled ? '<span class="pill 見送り">見送りに変更</span>' : p.kind === 'update' ? '<span class="pill 変更">変更あり</span>' : '';
+  const state = p.cancelled ? '<span class="pill 見送り">見送りに変更</span>' : p.kind === 'confirm' ? '<span class="pill hit">買えます</span>' : p.kind === 'update' ? '<span class="pill 変更">馬が変わりました</span>' : '<span class="pill 変更">候補（5分前に確定）</span>';
   const rpill = res ? (res.pay ? `<span class="pill hit">${res.pos}着 複勝${res.pay}円</span>` : `<span class="pill miss">${res.pos ? res.pos + '着' : '着外'}</span>`) : '';
   const d = DATA.days[p.date]; const r = d && d.races.find(x => x.key === p.id);
   const rid = p.rid || (r && r.id);
@@ -351,7 +370,7 @@ async function renderCard(){
   if (!S.track || !tracks.includes(S.track)) S.track = tracks[0];
   if (S.race){ const r = d.races.find(x => x.key === S.race); if (r) return raceDetail(d, r); S.race = null; }
   const now = new Date(), nowHM = now.toLocaleTimeString('sv-SE', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit' }).replace(':', '');
-  const rs = d.races.filter(r => r.track === S.track);
+  const rs = d.races.filter(r => r.track === S.track).sort((a, b) => (!!a.result - !!b.result) || (String(a.post).padStart(4, '0') < String(b.post).padStart(4, '0') ? -1 : 1));   // 終わったレースは後ろへ
   return `<div class="row" style="justify-content:space-between"><h2>${fmtDay(date)}の出馬表</h2><button class="btn small" type="button" data-reload="1">更新</button></div>
   <div class="chips">${tracks.map(t => `<button class="chip" data-track="${esc(t)}" aria-pressed="${t===S.track}">${esc(t)}</button>`).join('')}</div>
   <div class="rlist">${rs.map(r => {
@@ -363,11 +382,21 @@ async function renderCard(){
       ${pk ? `<span class="rs" style="display:block">${lv.map(m => `<span class="pill ${m}">${m}</span>`).join(' ') || '<span class="pill 見送り">買い</span>'} ${pk.uma}番 ${esc(pk.name)}</span>` : ''}</span>
       <span class="rt">${hhmm(r.post)}${win ? `<br><span class="pos p1">${win}</span>` : String(r.post).padStart(4,'0') > nowHM && r.oddsAt ? '<br>オッズ有' : ''}</span></button>`;
   }).join('')}</div>
-  <p class="lead" style="font-size:12px">${d.at ? new Date(d.at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) + ' 時点。' : ''}オッズは発走12分前と7分前に読んだ値です（締切直前にはさらに下がることが多い）。</p>`;
+  <p class="lead" style="font-size:12px">${d.at ? new Date(d.at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) + ' 時点。' : ''}オッズは発走12分前と5分前に読んだ値です（締切直前にはさらに下がることが多い）。</p>`;
 }
 function noData(){
   if (DATA.err === 'nokey') return `<div class="card empty"><b>予想データの鍵がまだありません</b>PCで <span class="num">node set-token.js</span> を動かすと、このiPhoneに鍵が届いて出馬表やデータが見られるようになります。</div>`;
   return `<div class="card empty"><b>今日の出馬表はまだありません</b>${esc(DATA.err || 'PCのプログラムが動くと、ここに今日のレースと予想が出ます。')}<div style="margin-top:12px"><button class="btn small" type="button" data-reload="1">もう一度読む</button></div></div>`;
+}
+// 結果：着順・複勝・3連複を枠の色つきで
+function resultBox(r, res){
+  const wk = u => (r.horses.find(h => h.uma === u) || {}).waku || '';
+  const chip = u => `<span class="uma s w${wk(u)}">${u}</span>`;
+  const row = (label, body, pay) => `<div class="resrow"><span class="rl">${label}</span><span class="rc">${body}</span>${pay != null ? `<span class="rp num">${pay}</span>` : ''}</div>`;
+  let h = row('着順', res.order.slice(0, 3).map((u, i) => `<span class="ord"><small>${i + 1}着</small>${chip(u)}</span>`).join(''), null);
+  h += (res.place || []).map((x, i) => row(i ? '' : '複勝', chip(x[0]), x[1].toLocaleString() + '円')).join('');
+  if (res.trio) h += row('3連複', res.trio[0].slice().sort((a, b) => a - b).map(chip).join('<span class="dash">-</span>'), res.trio[1].toLocaleString() + '円');
+  return `<div class="resbox">${h}</div>`;
 }
 async function raceDetail(d, r){
   const bank = await bankroll(), bs = await bets();
@@ -382,7 +411,7 @@ async function raceDetail(d, r){
     <div class="race" style="margin-bottom:6px"><b>${esc(r.track)} ${r.rno}R</b>${lv.map(m => `<span class="pill ${m}">${m}</span>`).join('')}<span class="post">発走 ${hhmm(r.post)}</span></div>
     <div style="font-weight:700">${esc(r.name)}</div>
     <div class="hs" style="font-size:12px;color:var(--mute)">${esc(r.surf)} ${r.dist}m・${r.n}頭${r.going ? '・馬場 ' + esc(r.going) : ''}${r.label ? '・' + esc(r.label) : ''}${r.oddsAt ? '・' + ago(r.oddsAt) + 'のオッズ' : '・オッズ未取得'}</div>
-    ${res ? `<div class="summary" style="margin-top:8px">結果　${res.order.slice(0, 3).map((u, i) => `${i + 1}着 ${u}番`).join('・')}　複勝 ${res.place.map(x => `${x[0]}番${x[1]}円`).join(' ')}</div>` : ''}
+    ${res ? resultBox(r, res) : ''}
     ${pk ? `<div class="summary" style="margin-top:8px">期待値複勝の買い：<b>${pk}番 ${esc((r.horses.find(h => h.uma === pk) || {}).name)}</b></div>` : r.pick && r.pick.why ? `<div class="summary" style="margin-top:8px">期待値複勝：${esc(r.pick.why)}</div>` : ''}
     <div class="row" style="margin-top:8px">${r.id ? `<a class="btn small primary" href="${BET}${esc(r.id)}" target="_blank" rel="noopener">楽天で買う</a><a class="btn small" href="${RAKUTEN}/odds/tanfuku/RACEID/${esc(r.id)}" target="_blank" rel="noopener">オッズ</a>` : ''}</div>
   </section>
@@ -396,14 +425,50 @@ async function raceDetail(d, r){
     const isPick = h.uma === pk;
     return `<div class="hrow ${isPick ? 'pick' : ''} ${h.scr ? 'scr' : ''}">
       <span class="uma s w${h.waku}">${h.uma}</span>
-      <div style="min-width:0"><div class="hn">${h.pos ? `<span class="pos p${h.pos <= 3 ? h.pos : ''}">${h.pos}</span> ` : ''}${esc(h.name)}${h.scr ? '（取消）' : ''}</div>
+      <div style="min-width:0"><div class="hn">${esc(h.name)}${h.scr ? '（取消）' : ''}</div>
         <div class="hs">${esc(h.sa)}・${esc(h.carry)}kg・${esc(h.jockey)}<br>父 ${esc(h.sire)}${h.damsire ? '／母父 ' + esc(h.damsire) : ''}</div></div>
       <div class="hv">${h.p3 != null ? `<b>${Math.round(h.p3 * 100)}</b>%<br>` : ''}${h.place ? `複${h.place.toFixed(1)}` : ''}${h.tan ? ` 単${h.tan.toFixed(1)}` : ''}${h.ev != null ? `<br>期待値 <b style="font-size:13px;color:${h.ev >= 1 ? 'var(--pos)' : 'var(--ink)'}">${h.ev.toFixed(2)}</b>` : ''}${h.pop ? `<br>${h.pop}人気` : ''}</div>
       <div class="tags">${tags.join('')}</div>
       ${isPick && !res ? `<div style="grid-column:1/-1">${buyBlock({ key: r.key, date: d.date, track: r.track, rno: r.rno, post: hhmm(r.post), uma: h.uma, name: h.name, rid: r.id, bank, bets: bs })}</div>` : ''}
     </div>`;
   }).join('')}</section>
+  ${await paceBox(r)}
   <p class="lead" style="font-size:12px">数字は「3着内に入る確率」（データとオッズから計算）、複勝・単勝のオッズ、複勝の期待値（3着内率×複勝オッズ）。タグはその馬の予想で効いている材料です（＋は追い風、−は向かい風）。自分で買うときの参考に。</p>`;
+}
+
+// ---- 展開・コースの予想（出馬表の下）
+async function paceBox(r){
+  const st = await loadStatic();
+  const hs = r.horses.filter(h => !h.scr);
+  const hc = h => `<span class="hchip"><span class="uma s w${h.waku}">${h.uma}</span>${esc(h.name)}</span>`;
+  const list = xs => xs.length ? xs.map(hc).join('') : '<span class="hs">なし</span>';
+  const ban = r.track === '帯広(ば)';
+  let h = `<section class="card"><h2 style="margin-bottom:10px">展開・コースの予想</h2>`;
+  // ペースとコース
+  const pc = r.pace;
+  const paceL = !pc || ban ? null : pc.expect >= 0.3 ? ['ハイペース予想', '先行したい馬が多く、前が競り合いやすい'] : pc.expect <= -0.3 ? ['スロー予想', '先行したい馬が少なく、前の馬が楽に運べそう'] : ['平均ペース予想', '先行したい馬の数はふつう'];
+  const fb = pc ? pc.frontBias : null;
+  const courseL = fb == null || ban ? null : fb > 0.05 ? '前に行く馬が有利なコース' : fb < -0.05 ? '後ろからでも届きやすいコース' : '脚質の有利不利は小さいコース';
+  const c = st && st.courses.find(x => x.track === r.track && x.dist === r.dist);
+  if (paceL) h += `<div class="pbox"><b>${paceL[0]}</b><span>${paceL[1]}（先行タイプ ${pc.nFront}頭／脚質が分かる馬 ${pc.known}頭）</span></div>`;
+  if (courseL || c) h += `<div class="pbox"><b>${esc(r.track)} ${r.dist}m</b><span>${courseL || ''}${c ? `<br>枠 内/中/外 ${biasBars(c.frame, ['内','中','外'])}${ban ? '' : `<br>位置 前/中/後 ${biasBars(c.early, ['前','中','後'])}　差し決着 ${pct(c.kire)}`}` : ''}</span></div>`;
+  if (paceL && courseL) {
+    const sum = (pc.expect <= -0.3 && fb > 0.05) ? '前残りになりやすい形。逃げ・先行の馬を重く見たい' : (pc.expect >= 0.3 && fb < 0.05) ? '前がつぶれて差しが届きやすい形' : (pc.expect >= 0.3 && fb > 0.05) ? '前有利のコースでも先行争いが激しい。好位の馬が得をしやすい' : (pc.expect <= -0.3 && fb < -0.05) ? '差しコースだがペースは落ち着きそう。極端な後方一気は届かないことも' : '';
+    if (sum) h += `<p class="lead" style="margin:4px 0 10px">→ ${sum}</p>`;
+  }
+  // 位置取り予想
+  if (!ban) {
+    const grp = [['逃げ・先行', x => x < 0.25], ['好位', x => x >= 0.25 && x < 0.5], ['中団', x => x >= 0.5 && x < 0.75], ['後方', x => x >= 0.75]];
+    const sorted = hs.filter(x => x.sv != null).sort((a, b) => a.sv - b.sv);
+    h += `<h3 class="ph">位置取り予想（過去のレースの平均位置から）</h3><div class="pgrid">${grp.map(([l, f]) => `<span class="pl">${l}</span><span class="pr">${list(sorted.filter(x => f(x.sv)))}</span>`).join('')}${hs.some(x => x.sv == null) ? `<span class="pl">データなし</span><span class="pr">${list(hs.filter(x => x.sv == null))}</span>` : ''}</div>`;
+    h += `<h3 class="ph">展開が向く馬・向かない馬</h3><div class="pgrid"><span class="pl plus">向く</span><span class="pr">${list(hs.filter(x => x.pace > 0.02).sort((a, b) => b.pace - a.pace))}</span><span class="pl minus">向かない</span><span class="pr">${list(hs.filter(x => x.pace < -0.02).sort((a, b) => a.pace - b.pace))}</span></div>`;
+  }
+  // コース・距離・馬場（血統）の合う合わない（このレースの中で比べて）
+  const fitv = x => x.fit ? (x.fit.course || 0) + (x.fit.dist || 0) + (x.fit.turn || 0) : null;
+  const fs = hs.filter(x => fitv(x) != null); const avg = fs.length ? fs.reduce((a, x) => a + fitv(x), 0) / fs.length : 0;
+  h += `<h3 class="ph">コース・距離が合うか（このレースの中で比べて）</h3><div class="pgrid"><span class="pl plus">合う</span><span class="pr">${list(fs.filter(x => fitv(x) - avg > 0.08).sort((a, b) => fitv(b) - fitv(a)))}</span><span class="pl minus">合わない</span><span class="pr">${list(fs.filter(x => fitv(x) - avg < -0.08).sort((a, b) => fitv(a) - fitv(b)))}</span></div>`;
+  if (r.going) h += `<h3 class="ph">今日の馬場（${esc(r.going)}）と血統</h3><div class="pgrid"><span class="pl plus">得意</span><span class="pr">${list(hs.filter(x => x.blood === 'good'))}</span><span class="pl minus">苦手</span><span class="pr">${list(hs.filter(x => x.blood === 'bad'))}</span></div>`;
+  return h + `<p class="lead" style="font-size:12px;margin-top:8px">位置取りは過去のレースの最初のコーナーの平均位置、展開は「脚質×このコースの前残り傾向×今回の先行馬の数」、コース適性はこの競馬場・距離・回りでの実績から出しています。</p></section>`;
 }
 
 // ---- 収支タブ
@@ -424,6 +489,7 @@ async function renderMoney(){
       <div class="stat"><small>収支（確定分）</small><b class="${pl >= 0 ? 'plus' : 'minus'}">${pl >= 0 ? '+' : ''}${yen(pl)}</b></div>
       <div class="stat"><small>回収率</small><b>${pct(roi)}</b><small>${hits}／${settled.length}的中${bank.open ? '・結果待ち ' + yen(bank.open) : ''}</small></div>
     </div></section>`;
+  h += await ruleBox();
   if (!bs.length) h += `<div class="card empty"><b>まだ記録がありません</b>通知や出馬表の「買った」を押すと、ここに並び、レース後に結果が自動で反映されます。</div>`;
   else {
     const days = [...new Set(bs.map(b => b.date))];
@@ -440,6 +506,20 @@ async function renderMoney(){
     }).join('');
   }
   return h;
+}
+async function ruleBox(){
+  const st = await loadStatic(); const td = await loadDay(todayStr());
+  const rows = [];
+  if (td && td.ruleToday) rows.push(['今日', td.ruleToday, '5分前に「買えます」と通知した馬']);
+  if (st && st.rules) { rows.push(['過去1か月', st.rules.m1, `${fmtDay(st.rules.m1.from)}〜${fmtDay(st.rules.m1.to)}`]); rows.push(['過去半年', st.rules.m6, `${fmtDay(st.rules.m6.from)}〜${fmtDay(st.rules.m6.to)}`]); }
+  if (!rows.length) return '';
+  const cell = x => { const done = x.n - (x.open || 0); return `<td class="r num">${x.n}${x.open ? `<small style="color:var(--mute)">（待${x.open}）</small>` : ''}</td><td class="r num">${done ? pct(x.hit / done) : '–'}</td><td class="r num ${done && x.ret / done >= 100 ? 'plus' : done ? 'minus' : ''}">${done ? Math.round(x.ret / done) + '%' : '–'}</td>`; };
+  return `<section class="card"><h2 style="margin-bottom:4px">本線（ルール該当馬）の成績</h2>
+    <p class="lead" style="font-size:12px">複勝を100円ずつ買った場合。人気＝1〜3番人気、穴＝4番人気以下。</p>
+    <div class="tw"><table><thead><tr><th>期間</th><th></th><th class="r">頭数</th><th class="r">的中率</th><th class="r">回収率</th></tr></thead><tbody>
+    ${rows.map(([l, x, sub]) => `<tr><td rowspan="3" style="vertical-align:top"><b>${l}</b><br><small style="color:var(--mute);white-space:normal">${sub}</small></td><td>全体</td>${cell(x.all)}</tr><tr><td>人気</td>${cell(x.fav)}</tr><tr><td>穴</td>${cell(x.ana)}</tr>`).join('')}
+    </tbody></table></div>
+    <p class="lead" style="font-size:12px;margin-top:8px">過去の分は、保存してある締切前のオッズで判定し直した成績です。過去半年には、ルールを決めるのに使った期間（9/4まで）も入っています。</p></section>`;
 }
 
 // ---- データタブ（競馬場・コース・血統）
